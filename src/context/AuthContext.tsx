@@ -1,0 +1,97 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, LoginRequest, RegisterRequest } from '../types/auth';
+import { authService } from '../services/authService';
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  isAuthModalOpen: boolean;
+  authModalMode: 'login' | 'register';
+  openAuthModal: (mode?: 'login' | 'register') => void;
+  closeAuthModal: () => void;
+  login: (request: LoginRequest) => Promise<void>;
+  register: (request: RegisterRequest) => Promise<void>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Auth Modal State
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+
+  useEffect(() => {
+    const storedToken = authService.getStoredToken();
+    const storedUser = authService.getStoredUser();
+    
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(storedUser);
+    }
+    setIsLoading(false);
+  }, []);
+
+  const openAuthModal = (mode: 'login' | 'register' = 'login') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  const login = async (request: LoginRequest) => {
+    const data = await authService.login(request);
+    setUser(data.user);
+    setToken(data.accessToken);
+    closeAuthModal();
+  };
+
+  const register = async (request: RegisterRequest) => {
+    const data = await authService.register(request);
+    setUser(data.user);
+    setToken(data.accessToken);
+    closeAuthModal();
+  };
+
+  const logout = () => {
+    authService.logout();
+    setUser(null);
+    setToken(null);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: !!user && !!token,
+        isLoading,
+        isAuthModalOpen,
+        authModalMode,
+        openAuthModal,
+        closeAuthModal,
+        login,
+        register,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

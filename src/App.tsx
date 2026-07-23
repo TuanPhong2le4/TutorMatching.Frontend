@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
+import { useAuth } from './context/AuthContext';
+import { AuthModal } from './components/AuthModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings'>('home');
+  const { user, isAuthenticated, openAuthModal, logout } = useAuth();
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <header className="glass-panel" style={{ margin: '16px 24px', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setActiveTab('home')}>
           <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #38bdf8, #a855f7)', display: 'grid', placeItems: 'center', fontWeight: 'bold', fontSize: '20px' }}>
             T
           </div>
@@ -32,13 +35,48 @@ export default function App() {
           </button>
         </nav>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 }}>
-            Đăng Nhập
-          </button>
-          <button className="btn-primary">
-            Đăng Ký
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {isAuthenticated && user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user.fullName}</span>
+                <span style={{ fontSize: '12px', color: '#38bdf8' }}>
+                  {user.role === 'Student' ? '🎓 Học Viên' : user.role === 'Tutor' ? '👨‍🏫 Gia Sư' : '👑 Admin'}
+                </span>
+              </div>
+
+              <button
+                onClick={logout}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#f87171',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                }}
+              >
+                Đăng Xuất
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => openAuthModal('login')}
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 }}
+              >
+                Đăng Nhập
+              </button>
+              <button
+                onClick={() => openAuthModal('register')}
+                className="btn-primary"
+              >
+                Đăng Ký
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -58,24 +96,34 @@ export default function App() {
               <button className="btn-primary" style={{ padding: '14px 32px', fontSize: '16px' }} onClick={() => setActiveTab('tutors')}>
                 Khám Phá Gia Sư
               </button>
+              {!isAuthenticated && (
+                <button
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '14px 32px', fontSize: '16px', borderRadius: '10px', cursor: 'pointer', fontWeight: 600 }}
+                  onClick={() => openAuthModal('register')}
+                >
+                  Đăng Ký Gia Sư / Học Viên
+                </button>
+              )}
             </div>
 
             {/* Quick Stats Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
               <div className="glass-panel" style={{ padding: '24px', textAlign: 'left' }}>
-                <h3 style={{ fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>API Endpoint</h3>
-                <p style={{ fontSize: '20px', fontWeight: '700', color: '#38bdf8' }}>https://localhost:7123/api</p>
-                <span style={{ fontSize: '13px', color: '#4ade80' }}>● Đã cấu hình CORS & Proxy</span>
+                <h3 style={{ fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>Xác Thực JWT</h3>
+                <p style={{ fontSize: '20px', fontWeight: '700', color: '#38bdf8' }}>
+                  {isAuthenticated ? '● Đã Đăng Nhập' : '○ Chưa Đăng Nhập'}
+                </p>
+                <span style={{ fontSize: '13px', color: '#4ade80' }}>● Tự động lưu Token vào LocalStorage</span>
               </div>
               <div className="glass-panel" style={{ padding: '24px', textAlign: 'left' }}>
                 <h3 style={{ fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>Công Nghệ Frontend</h3>
-                <p style={{ fontSize: '20px', fontWeight: '700', color: '#a855f7' }}>React 18 + Vite + TypeScript</p>
-                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Nhanh, nhẹ & tối ưu tốt</span>
+                <p style={{ fontSize: '20px', fontWeight: '700', color: '#a855f7' }}>React 18 + Context API</p>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Quản lý state Auth toàn cục</span>
               </div>
               <div className="glass-panel" style={{ padding: '24px', textAlign: 'left' }}>
-                <h3 style={{ fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>Tích Hợp Backend</h3>
-                <p style={{ fontSize: '20px', fontWeight: '700', color: '#6366f1' }}>JWT & SignalR Ready</p>
-                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Xác thực & Thông báo Real-time</span>
+                <h3 style={{ fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>Kết Nối API Backend</h3>
+                <p style={{ fontSize: '20px', fontWeight: '700', color: '#6366f1' }}>POST /api/Auth/*</p>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Axios Client với Interceptor</span>
               </div>
             </div>
           </div>
@@ -98,7 +146,19 @@ export default function App() {
                   <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '16px' }}>{tutor.subject}</p>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
                     <span style={{ fontWeight: '700', fontSize: '16px', color: '#4ade80' }}>{tutor.rate}</span>
-                    <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '14px' }}>Đặt Lịch</button>
+                    <button
+                      className="btn-primary"
+                      style={{ padding: '8px 16px', fontSize: '14px' }}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          openAuthModal('login');
+                        } else {
+                          alert('Chức năng đặt lịch đang được kết nối!');
+                        }
+                      }}
+                    >
+                      Đặt Lịch
+                    </button>
                   </div>
                 </div>
               ))}
@@ -109,10 +169,22 @@ export default function App() {
         {activeTab === 'bookings' && (
           <div className="glass-panel" style={{ padding: '32px' }}>
             <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>Quản Lý Lịch Học & Đặt Chỗ</h2>
-            <p style={{ color: '#94a3b8' }}>Dữ liệu sẽ được kết nối trực tiếp với API `/api/Bookings` của Backend ASP.NET Core.</p>
+            {isAuthenticated ? (
+              <p style={{ color: '#4ade80' }}>Bạn đã đăng nhập với tên <strong>{user?.fullName}</strong>. Dữ liệu lịch học sẽ được tải từ API `/api/Bookings`.</p>
+            ) : (
+              <div>
+                <p style={{ color: '#f87171', marginBottom: '16px' }}>Bạn cần đăng nhập để xem và quản lý lịch học.</p>
+                <button className="btn-primary" onClick={() => openAuthModal('login')}>
+                  Đăng Nhập Ngay
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>
+
+      {/* Auth Modal Component */}
+      <AuthModal />
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
