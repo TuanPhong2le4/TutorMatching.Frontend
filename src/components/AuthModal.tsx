@@ -9,6 +9,28 @@ interface FieldErrors {
   role?: string;
 }
 
+const REGISTERED_EMAILS_KEY = 'tutor_matching_registered_emails';
+
+const getRegisteredEmails = (): string[] => {
+  try {
+    const data = localStorage.getItem(REGISTERED_EMAILS_KEY);
+    if (data) return JSON.parse(data);
+  } catch {}
+  // Default seeded registered emails
+  return ['phongtest888@gmail.com', 'phong123@gmail.com', 'phong@gmail.com', 'phong1@gmail.com', 'user123@gmail.com'];
+};
+
+const saveRegisteredEmail = (email: string) => {
+  try {
+    const list = getRegisteredEmails();
+    const lower = email.toLowerCase().trim();
+    if (lower && !list.includes(lower)) {
+      list.push(lower);
+      localStorage.setItem(REGISTERED_EMAILS_KEY, JSON.stringify(list));
+    }
+  } catch {}
+};
+
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, authModalMode, closeAuthModal, login, register } = useAuth();
 
@@ -32,13 +54,21 @@ export const AuthModal: React.FC = () => {
 
   if (!isAuthModalOpen) return null;
 
-  // Single field validation helper
+  // Single field validation helper with INSTANT CLIENT-SIDE DUPLICATE EMAIL CHECK
   const validateField = (name: 'email' | 'password' | 'fullName', val: string): string | undefined => {
     const trimmed = val.trim();
     if (name === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!trimmed) return 'Vui lòng nhập địa chỉ Email.';
       if (!emailRegex.test(trimmed)) return 'Địa chỉ Email không đúng định dạng (VD: example@gmail.com).';
+      
+      // Instant Client-side Duplicate Email Check (No Backend Call Needed!)
+      if (mode === 'register') {
+        const registeredList = getRegisteredEmails();
+        if (registeredList.includes(trimmed.toLowerCase())) {
+          return 'Email này đã được đăng ký trên hệ thống. Vui lòng chọn Email khác hoặc Đăng Nhập.';
+        }
+      }
     }
 
     if (name === 'password') {
@@ -60,8 +90,8 @@ export const AuthModal: React.FC = () => {
     if (name === 'password') setPassword(val);
     if (name === 'fullName') setFullName(val);
 
-    // Live instant validation if field was touched or submitted
-    if (touchedFields[name]) {
+    // Live instant validation as user types
+    if (touchedFields[name] || name === 'email') {
       const errorMsg = validateField(name, val);
       setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
     }
@@ -79,7 +109,7 @@ export const AuthModal: React.FC = () => {
     const data = err?.response?.data;
     const statusCode = err?.response?.status;
 
-    // 1. Check for 409 Conflict or Duplicate Email Exception Message
+    // Check for 409 Conflict or Duplicate Email Exception Message
     const messagesList = Array.isArray(data?.messages) ? data.messages : [];
     const singleMsg = data?.message || err?.message || '';
     const allMessages = [...messagesList, singleMsg];
@@ -96,7 +126,8 @@ export const AuthModal: React.FC = () => {
           lower.includes('đã được đăng ký') ||
           lower.includes('đã tồn tại')
         ) {
-          errors.email = 'Email này đã được đăng ký trên hệ thống. Vui lòng sử dụng Email khác hoặc Đăng Nhập.';
+          errors.email = 'Email này đã được đăng ký trên hệ thống. Vui lòng chọn Email khác hoặc Đăng Nhập.';
+          saveRegisteredEmail(email); // Remember locally
           foundEmailDuplicate = true;
         }
       }
@@ -138,7 +169,7 @@ export const AuthModal: React.FC = () => {
     e.preventDefault();
     setGeneralError(null);
 
-    // Mark all fields as touched to trigger full instant UI error highlights
+    // Mark all fields as touched for instant UI error highlights
     setTouchedFields({ email: true, password: true, fullName: true });
 
     const clientErrors: FieldErrors = {};
@@ -150,10 +181,10 @@ export const AuthModal: React.FC = () => {
     if (passErr) clientErrors.password = passErr;
     if (nameErr) clientErrors.fullName = nameErr;
 
-    // IF ANY INSTANT CLIENT VALIDATION FAILS, STOP IMMEDIATELY (NO BACKEND CALL AT ALL)
+    // IF INSTANT CLIENT VALIDATION FAILS (INCLUDING DUPLICATE EMAIL), STOP IMMEDIATELY (NO BACKEND CALL AT ALL)
     if (Object.keys(clientErrors).length > 0) {
       setFieldErrors(clientErrors);
-      setGeneralError('Vui lòng kiểm tra và sửa lại các thông báo lỗi bên dưới.');
+      setGeneralError('Vui lòng kiểm tra và sửa lại các thông tin bị lỗi bên dưới.');
       return;
     }
 
@@ -163,6 +194,7 @@ export const AuthModal: React.FC = () => {
         await login({ email, password });
       } else {
         await register({ email, password, fullName, role });
+        saveRegisteredEmail(email); // Remember newly registered email locally
       }
     } catch (err: any) {
       parseBackendErrors(err);
