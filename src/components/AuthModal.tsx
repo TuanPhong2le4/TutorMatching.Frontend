@@ -73,9 +73,34 @@ export const AuthModal: React.FC = () => {
     setFieldErrors({});
 
     const clientErrors: FieldErrors = {};
-    if (!email) clientErrors.email = 'Vui lòng nhập địa chỉ Email.';
-    if (!password) clientErrors.password = 'Vui lòng nhập Mật khẩu.';
-    if (mode === 'register' && !fullName) clientErrors.fullName = 'Vui lòng nhập Họ và Tên.';
+    const trimmedEmail = email.trim();
+    const trimmedFullName = fullName.trim();
+
+    // 1. Email Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail) {
+      clientErrors.email = 'Vui lòng nhập địa chỉ Email.';
+    } else if (!emailRegex.test(trimmedEmail)) {
+      clientErrors.email = 'Địa chỉ Email không đúng định dạng (VD: example@gmail.com).';
+    }
+
+    // 2. Password Validation (matching Backend: minimum 6 chars, no spaces)
+    if (!password) {
+      clientErrors.password = 'Vui lòng nhập Mật khẩu.';
+    } else if (password.includes(' ')) {
+      clientErrors.password = 'Mật khẩu không được chứa khoảng trắng.';
+    } else if (password.length < 6) {
+      clientErrors.password = 'Mật khẩu phải có tối thiểu 6 ký tự.';
+    }
+
+    // 3. Full Name Validation (Register mode)
+    if (mode === 'register') {
+      if (!trimmedFullName) {
+        clientErrors.fullName = 'Vui lòng nhập Họ và Tên.';
+      } else if (trimmedFullName.length < 2) {
+        clientErrors.fullName = 'Họ và Tên phải từ 2 ký tự trở lên.';
+      }
+    }
 
     if (Object.keys(clientErrors).length > 0) {
       setFieldErrors(clientErrors);
