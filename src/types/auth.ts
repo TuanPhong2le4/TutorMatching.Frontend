@@ -1,14 +1,14 @@
 export enum UserRole {
-  Student = 'Student',
-  Tutor = 'Tutor',
-  Admin = 'Admin',
+  Admin = 0,
+  Tutor = 1,
+  Student = 2,
 }
 
 export interface User {
   id: string;
   email: string;
   fullName: string;
-  role: UserRole | string;
+  role: UserRole | number | string;
   creditsBalance?: number;
   avatarUrl?: string;
 }
@@ -35,5 +35,5 @@ export interface RegisterRequest {
   email: string;
   password: string;
   fullName: string;
-  role: string;
+  role: number;
 }

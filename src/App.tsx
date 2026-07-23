@@ -41,7 +41,7 @@ export default function App() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                 <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user.fullName}</span>
                 <span style={{ fontSize: '12px', color: '#38bdf8' }}>
-                  {user.role === 'Student' ? '🎓 Học Viên' : user.role === 'Tutor' ? '👨‍🏫 Gia Sư' : '👑 Admin'}
+                  {Number(user.role) === 2 || user.role === 'Student' ? '🎓 Học Viên' : Number(user.role) === 1 || user.role === 'Tutor' ? '👨‍🏫 Gia Sư' : '👑 Admin'}
                 </span>
               </div>
 
