@@ -7,8 +7,8 @@ export default function App() {
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+
       <header className="glass-panel" style={{ margin: '16px 24px', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setActiveTab('home')}>
           <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #38bdf8, #a855f7)', display: 'grid', placeItems: 'center', fontWeight: 'bold', fontSize: '20px' }}>
@@ -80,7 +80,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main style={{ flex: 1, padding: '32px 24px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
         {activeTab === 'home' && (
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
@@ -106,7 +105,6 @@ export default function App() {
               )}
             </div>
 
-            {/* Quick Stats Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
               <div className="glass-panel" style={{ padding: '24px', textAlign: 'left' }}>
                 <h3 style={{ fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>Xác Thực JWT</h3>
@@ -183,10 +181,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Auth Modal Component */}
       <AuthModal />
 
-      {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
         © 2026 TutorMatching - Frontend React App | Connected to TutorPlatform.API
       </footer>

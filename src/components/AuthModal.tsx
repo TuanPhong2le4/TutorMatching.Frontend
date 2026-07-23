@@ -43,7 +43,8 @@ export const AuthModal: React.FC = () => {
         await register({ email, password, fullName, role });
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      const backendMessage = err?.response?.data?.messages?.[0] || err?.response?.data?.message;
+      setError(backendMessage || err?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     } finally {
       setIsSubmitting(false);
     }
