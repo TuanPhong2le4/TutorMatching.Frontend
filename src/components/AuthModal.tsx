@@ -34,29 +34,55 @@ export const AuthModal: React.FC = () => {
     const errors: FieldErrors = {};
     let mainError: string | null = null;
     const data = err?.response?.data;
+    const statusCode = err?.response?.status;
 
-    // 1. Parse ASP.NET Core Validation Errors Object (e.g. { errors: { Email: ["..."] } })
-    if (data?.errors && typeof data.errors === 'object') {
-      Object.keys(data.errors).forEach((key) => {
-        const lowerKey = key.toLowerCase();
-        const firstMsg = Array.isArray(data.errors[key]) ? data.errors[key][0] : String(data.errors[key]);
-        if (lowerKey.includes('email')) errors.email = firstMsg;
-        else if (lowerKey.includes('password')) errors.password = firstMsg;
-        else if (lowerKey.includes('fullname') || lowerKey.includes('name')) errors.fullName = firstMsg;
-        else if (lowerKey.includes('role')) errors.role = firstMsg;
-      });
-    }
+    // 1. Check for 409 Conflict or Duplicate Email Exception Message
+    const messagesList = Array.isArray(data?.messages) ? data.messages : [];
+    const singleMsg = data?.message || err?.message || '';
+    const allMessages = [...messagesList, singleMsg];
 
-    // 2. Parse Messages Array from Backend GlobalExceptionHandler
-    if (data?.messages && Array.isArray(data.messages)) {
-      data.messages.forEach((msg: string) => {
+    let foundEmailDuplicate = false;
+    allMessages.forEach((msg) => {
+      if (typeof msg === 'string') {
         const lower = msg.toLowerCase();
-        if (lower.includes('email')) errors.email = msg;
-        else if (lower.includes('password') || lower.includes('mật khẩu')) errors.password = msg;
-        else if (lower.includes('fullname') || lower.includes('name') || lower.includes('họ') || lower.includes('tên')) errors.fullName = msg;
-        else if (lower.includes('role') || lower.includes('vai trò')) errors.role = msg;
-        else if (!mainError) mainError = msg;
-      });
+        if (
+          statusCode === 409 ||
+          lower.includes('email already exists') ||
+          lower.includes('email exist') ||
+          lower.includes('already registered') ||
+          lower.includes('đã được đăng ký') ||
+          lower.includes('đã tồn tại')
+        ) {
+          errors.email = 'Email này đã được đăng ký trên hệ thống. Vui lòng sử dụng Email khác hoặc Đăng Nhập.';
+          foundEmailDuplicate = true;
+        }
+      }
+    });
+
+    if (!foundEmailDuplicate) {
+      // 2. Parse ASP.NET Core Validation Errors Object (e.g. { errors: { Email: ["..."] } })
+      if (data?.errors && typeof data.errors === 'object') {
+        Object.keys(data.errors).forEach((key) => {
+          const lowerKey = key.toLowerCase();
+          const firstMsg = Array.isArray(data.errors[key]) ? data.errors[key][0] : String(data.errors[key]);
+          if (lowerKey.includes('email')) errors.email = firstMsg;
+          else if (lowerKey.includes('password')) errors.password = firstMsg;
+          else if (lowerKey.includes('fullname') || lowerKey.includes('name')) errors.fullName = firstMsg;
+          else if (lowerKey.includes('role')) errors.role = firstMsg;
+        });
+      }
+
+      // 3. Parse Messages Array from Backend GlobalExceptionHandler
+      if (data?.messages && Array.isArray(data.messages)) {
+        data.messages.forEach((msg: string) => {
+          const lower = msg.toLowerCase();
+          if (lower.includes('email')) errors.email = msg;
+          else if (lower.includes('password') || lower.includes('mật khẩu')) errors.password = msg;
+          else if (lower.includes('fullname') || lower.includes('name') || lower.includes('họ') || lower.includes('tên')) errors.fullName = msg;
+          else if (lower.includes('role') || lower.includes('vai trò')) errors.role = msg;
+          else if (!mainError) mainError = msg;
+        });
+      }
     }
 
     if (!mainError && !Object.keys(errors).length) {
