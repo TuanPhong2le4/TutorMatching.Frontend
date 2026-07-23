@@ -20,15 +20,58 @@ export const AuthModal: React.FC = () => {
   
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setMode(authModalMode);
     setGeneralError(null);
     setFieldErrors({});
+    setTouchedFields({});
   }, [authModalMode, isAuthModalOpen]);
 
   if (!isAuthModalOpen) return null;
+
+  // Single field validation helper
+  const validateField = (name: 'email' | 'password' | 'fullName', val: string): string | undefined => {
+    const trimmed = val.trim();
+    if (name === 'email') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!trimmed) return 'Vui lòng nhập địa chỉ Email.';
+      if (!emailRegex.test(trimmed)) return 'Địa chỉ Email không đúng định dạng (VD: example@gmail.com).';
+    }
+
+    if (name === 'password') {
+      if (!val) return 'Vui lòng nhập Mật khẩu.';
+      if (val.includes(' ')) return 'Mật khẩu không được chứa khoảng trắng.';
+      if (val.length < 6) return 'Mật khẩu phải có tối thiểu 6 ký tự.';
+    }
+
+    if (name === 'fullName' && mode === 'register') {
+      if (!trimmed) return 'Vui lòng nhập Họ và Tên.';
+      if (trimmed.length < 2) return 'Họ và Tên phải có tối thiểu 2 ký tự.';
+    }
+
+    return undefined;
+  };
+
+  const handleFieldChange = (name: 'email' | 'password' | 'fullName', val: string) => {
+    if (name === 'email') setEmail(val);
+    if (name === 'password') setPassword(val);
+    if (name === 'fullName') setFullName(val);
+
+    // Live instant validation if field was touched or submitted
+    if (touchedFields[name]) {
+      const errorMsg = validateField(name, val);
+      setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
+    }
+  };
+
+  const handleBlur = (name: 'email' | 'password' | 'fullName', val: string) => {
+    setTouchedFields((prev) => ({ ...prev, [name]: true }));
+    const errorMsg = validateField(name, val);
+    setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
+  };
 
   const parseBackendErrors = (err: any) => {
     const errors: FieldErrors = {};
@@ -60,7 +103,6 @@ export const AuthModal: React.FC = () => {
     });
 
     if (!foundEmailDuplicate) {
-      // 2. Parse ASP.NET Core Validation Errors Object (e.g. { errors: { Email: ["..."] } })
       if (data?.errors && typeof data.errors === 'object') {
         Object.keys(data.errors).forEach((key) => {
           const lowerKey = key.toLowerCase();
@@ -72,7 +114,6 @@ export const AuthModal: React.FC = () => {
         });
       }
 
-      // 3. Parse Messages Array from Backend GlobalExceptionHandler
       if (data?.messages && Array.isArray(data.messages)) {
         data.messages.forEach((msg: string) => {
           const lower = msg.toLowerCase();
@@ -96,40 +137,23 @@ export const AuthModal: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
-    setFieldErrors({});
+
+    // Mark all fields as touched to trigger full instant UI error highlights
+    setTouchedFields({ email: true, password: true, fullName: true });
 
     const clientErrors: FieldErrors = {};
-    const trimmedEmail = email.trim();
-    const trimmedFullName = fullName.trim();
+    const emailErr = validateField('email', email);
+    const passErr = validateField('password', password);
+    const nameErr = mode === 'register' ? validateField('fullName', fullName) : undefined;
 
-    // 1. Email Validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!trimmedEmail) {
-      clientErrors.email = 'Vui lòng nhập địa chỉ Email.';
-    } else if (!emailRegex.test(trimmedEmail)) {
-      clientErrors.email = 'Địa chỉ Email không đúng định dạng (VD: example@gmail.com).';
-    }
+    if (emailErr) clientErrors.email = emailErr;
+    if (passErr) clientErrors.password = passErr;
+    if (nameErr) clientErrors.fullName = nameErr;
 
-    // 2. Password Validation (matching Backend: minimum 6 chars, no spaces)
-    if (!password) {
-      clientErrors.password = 'Vui lòng nhập Mật khẩu.';
-    } else if (password.includes(' ')) {
-      clientErrors.password = 'Mật khẩu không được chứa khoảng trắng.';
-    } else if (password.length < 6) {
-      clientErrors.password = 'Mật khẩu phải có tối thiểu 6 ký tự.';
-    }
-
-    // 3. Full Name Validation (Register mode)
-    if (mode === 'register') {
-      if (!trimmedFullName) {
-        clientErrors.fullName = 'Vui lòng nhập Họ và Tên.';
-      } else if (trimmedFullName.length < 2) {
-        clientErrors.fullName = 'Họ và Tên phải từ 2 ký tự trở lên.';
-      }
-    }
-
+    // IF ANY INSTANT CLIENT VALIDATION FAILS, STOP IMMEDIATELY (NO BACKEND CALL AT ALL)
     if (Object.keys(clientErrors).length > 0) {
       setFieldErrors(clientErrors);
+      setGeneralError('Vui lòng kiểm tra và sửa lại các thông báo lỗi bên dưới.');
       return;
     }
 
@@ -208,6 +232,7 @@ export const AuthModal: React.FC = () => {
               setMode('login');
               setGeneralError(null);
               setFieldErrors({});
+              setTouchedFields({});
             }}
             style={{
               flex: 1,
@@ -228,6 +253,7 @@ export const AuthModal: React.FC = () => {
               setMode('register');
               setGeneralError(null);
               setFieldErrors({});
+              setTouchedFields({});
             }}
             style={{
               flex: 1,
@@ -272,10 +298,8 @@ export const AuthModal: React.FC = () => {
               <input
                 type="text"
                 value={fullName}
-                onChange={(e) => {
-                  setFullName(e.target.value);
-                  if (fieldErrors.fullName) setFieldErrors(prev => ({ ...prev, fullName: undefined }));
-                }}
+                onChange={(e) => handleFieldChange('fullName', e.target.value)}
+                onBlur={(e) => handleBlur('fullName', e.target.value)}
                 placeholder="Nhập họ và tên đầy đủ"
                 style={{
                   width: '100%',
@@ -307,10 +331,8 @@ export const AuthModal: React.FC = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
-              }}
+              onChange={(e) => handleFieldChange('email', e.target.value)}
+              onBlur={(e) => handleBlur('email', e.target.value)}
               placeholder="example@domain.com"
               style={{
                 width: '100%',
@@ -341,10 +363,8 @@ export const AuthModal: React.FC = () => {
             <input
               type="password"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: undefined }));
-              }}
+              onChange={(e) => handleFieldChange('password', e.target.value)}
+              onBlur={(e) => handleBlur('password', e.target.value)}
               placeholder="••••••••"
               style={{
                 width: '100%',
