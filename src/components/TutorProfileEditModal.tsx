@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { profileService, SubjectExperienceDto } from '../services/profileService';
 import { tutorService } from '../services/tutorService';
 import { Subject } from '../types/tutor';
@@ -10,6 +11,7 @@ interface TutorProfileEditModalProps {
 }
 
 export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ isOpen, onClose, onProfileSaved }) => {
+  const { updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -137,18 +139,24 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
           phone,
           avatarUrl: cleanAvatarUrl || undefined,
         });
+
+        // Sync logged-in user state in AuthContext immediately
+        updateUser({
+          fullName,
+          avatarUrl: cleanAvatarUrl || undefined,
+        });
       } catch (errUser) {
         console.warn('User basic info update warning:', errUser);
       }
 
-      setMessage({ type: 'success', text: 'Đã lưu thành công! Thông tin hồ sơ Gia Sư đã được cập nhật cho sinh viên xem.' });
+      setMessage({ type: 'success', text: 'Đã lưu thành công! Mọi thông tin vừa cập nhật đã được lưu và hiển thị lại ngay lập tức.' });
       
-      // Trigger catalog refresh immediately
+      // Trigger catalog & homepage refresh immediately
       onProfileSaved();
       
       setTimeout(() => {
         onClose();
-      }, 1500);
+      }, 1200);
     } catch (err: any) {
       console.error('Failed to save tutor profile:', err);
       const errText = err?.response?.data?.messages?.[0] || 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.';
