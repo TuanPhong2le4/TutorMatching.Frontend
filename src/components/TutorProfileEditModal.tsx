@@ -70,6 +70,9 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         }
       }
     } catch (err: any) {
+      if (err?.response?.status === 401) {
+        return; // Handled globally by AuthInterceptor
+      }
       console.warn('Profile initially empty or failed to load:', err);
     } finally {
       setLoading(false);
