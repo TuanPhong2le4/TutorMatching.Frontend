@@ -195,7 +195,10 @@ export const AuthPage: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '32px 24px',
-        background: 'radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 70%)',
+        backgroundImage: 'linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.90)), url("/auth-bg.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       }}
     >
       <div
