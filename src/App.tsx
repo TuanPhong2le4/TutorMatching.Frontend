@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
-import { AuthModal } from './components/AuthModal';
+import { AuthPage } from './pages/AuthPage';
 import { tutorService } from './services/tutorService';
 import { TutorSearchResult, Subject } from './types/tutor';
 import { TutorCard } from './components/TutorCard';
@@ -8,8 +8,8 @@ import { TutorDetailModal } from './components/TutorDetailModal';
 import { TutorSearchFilter } from './components/TutorSearchFilter';
 
 export default function App() {
+  const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings'>('home');
-  const { user, isAuthenticated, openAuthModal, logout } = useAuth();
 
   // Phase 2 Tutors Search & Filter States
   const [tutors, setTutors] = useState<TutorSearchResult[]>([]);
@@ -30,6 +30,7 @@ export default function App() {
 
   // Load Subjects on mount
   useEffect(() => {
+    if (!isAuthenticated) return;
     const fetchSubjects = async () => {
       try {
         const data = await tutorService.getAllSubjects();
@@ -39,14 +40,15 @@ export default function App() {
       }
     };
     fetchSubjects();
-  }, []);
+  }, [isAuthenticated]);
 
   // Fetch Tutors when filters or activeTab change
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (activeTab === 'tutors' || activeTab === 'home') {
       fetchTutors();
     }
-  }, [activeTab, searchTerm, selectedSubjectId, minRating, pageNumber]);
+  }, [isAuthenticated, activeTab, searchTerm, selectedSubjectId, minRating, pageNumber]);
 
   const fetchTutors = async () => {
     try {
@@ -77,14 +79,16 @@ export default function App() {
   };
 
   const handleBookTutor = (tutor: TutorSearchResult) => {
-    if (!isAuthenticated) {
-      openAuthModal('login');
-    } else {
-      setBookingNotice(`Đã chọn Gia Sư: ${tutor.fullName}. Chức năng Đặt Lịch Học (Phase 3) đã sẵn sàng!`);
-      setTimeout(() => setBookingNotice(null), 5000);
-    }
+    setBookingNotice(`Đã chọn Gia Sư: ${tutor.fullName}. Chức năng Đặt Lịch Học (Phase 3) đã sẵn sàng!`);
+    setTimeout(() => setBookingNotice(null), 5000);
   };
 
+  // IF NOT AUTHENTICATED: Show Dedicated Standalone Auth Page (Login & Register)
+  if (!isAuthenticated) {
+    return <AuthPage />;
+  }
+
+  // IF AUTHENTICATED: Render Main Application & Dashboard Page
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Top Header Navigation */}
@@ -126,48 +130,30 @@ export default function App() {
           </button>
         </nav>
 
+        {/* User Profile & Logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {isAuthenticated && user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user.fullName}</span>
-                <span style={{ fontSize: '12px', color: '#38bdf8' }}>
-                  {Number(user.role) === 2 || user.role === 'Student' ? '🎓 Học Viên' : Number(user.role) === 1 || user.role === 'Tutor' ? '👨‍🏫 Gia Sư' : '👑 Admin'}
-                </span>
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user?.fullName}</span>
+            <span style={{ fontSize: '12px', color: '#38bdf8' }}>
+              {Number(user?.role) === 2 || user?.role === 'Student' ? '🎓 Học Viên' : Number(user?.role) === 1 || user?.role === 'Tutor' ? '👨‍🏫 Gia Sư' : '👑 Admin'}
+            </span>
+          </div>
 
-              <button
-                onClick={logout}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                }}
-              >
-                Đăng Xuất
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={() => openAuthModal('login')}
-                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 }}
-              >
-                Đăng Nhập
-              </button>
-              <button
-                onClick={() => openAuthModal('register')}
-                className="btn-primary"
-              >
-                Đăng Ký
-              </button>
-            </div>
-          )}
+          <button
+            onClick={logout}
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 500,
+            }}
+          >
+            Đăng Xuất
+          </button>
         </div>
       </header>
 
@@ -211,14 +197,6 @@ export default function App() {
                 <button className="btn-primary" style={{ padding: '14px 32px', fontSize: '16px' }} onClick={() => setActiveTab('tutors')}>
                   🔍 Khám Phá {totalCount > 0 ? `${totalCount} Gia Sư` : 'Danh Sách Gia Sư'}
                 </button>
-                {!isAuthenticated && (
-                  <button
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '14px 32px', fontSize: '16px', borderRadius: '10px', cursor: 'pointer', fontWeight: 600 }}
-                    onClick={() => openAuthModal('register')}
-                  >
-                    Đăng Ký Tài Khoản
-                  </button>
-                )}
               </div>
             </div>
 
@@ -230,7 +208,7 @@ export default function App() {
               </div>
 
               {loading ? (
-                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Đang tải danh sách gia sư...</div>
+                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Đang tải danh sách gia sư từ CSDL...</div>
               ) : tutors.length > 0 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
                   {tutors.slice(0, 3).map((tutor) => (
@@ -238,7 +216,7 @@ export default function App() {
                   ))}
                 </div>
               ) : (
-                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Chưa có gia sư nào trong hệ thống.</div>
+                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Chưa có gia sư nào tạo tài khoản trong hệ thống CSDL.</div>
               )}
             </div>
           </div>
@@ -337,9 +315,9 @@ export default function App() {
                 }}
               >
                 <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔍</div>
-                <h3 style={{ fontSize: '18px', color: '#fff', marginBottom: '8px' }}>Không Tìm Thấy Gia Sư Nào</h3>
+                <h3 style={{ fontSize: '18px', color: '#fff', marginBottom: '8px' }}>Không Tìm Thấy Gia Sư Nào Trong CSDL</h3>
                 <p style={{ fontSize: '14px', maxWidth: '400px', margin: '0 auto 20px' }}>
-                  Rất tiếc, không có gia sư nào phù hợp với bộ lọc hiện tại. Bạn vui lòng thử tìm kiếm với từ khóa khác hoặc bỏ chọn bộ lọc.
+                  Không có gia sư nào phù hợp với bộ lọc hiện tại. Bạn vui lòng thử tìm kiếm với từ khóa khác hoặc tạo tài khoản gia sư mới.
                 </p>
                 <button onClick={handleResetFilters} className="btn-primary" style={{ padding: '10px 20px', fontSize: '14px' }}>
                   🔄 Xóa Bộ Lọc
@@ -353,27 +331,17 @@ export default function App() {
         {activeTab === 'bookings' && (
           <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
             <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>🗓️ Quản Lý Lịch Học & Đặt Chỗ</h2>
-            {isAuthenticated ? (
-              <p style={{ color: '#4ade80' }}>Bạn đã đăng nhập với tài khoản <strong>{user?.fullName}</strong>. Chức năng Quản lý Lịch học & Đặt chỗ (Phase 3) đã sẵn sàng để phát triển tiếp theo!</p>
-            ) : (
-              <div>
-                <p style={{ color: '#f87171', marginBottom: '16px' }}>Bạn cần đăng nhập để xem và quản lý lịch học.</p>
-                <button className="btn-primary" onClick={() => openAuthModal('login')}>
-                  Đăng Nhập Ngay
-                </button>
-              </div>
-            )}
+            <p style={{ color: '#4ade80' }}>Bạn đã đăng nhập với tài khoản <strong>{user?.fullName}</strong>. Chức năng Quản lý Lịch học & Đặt chỗ (Phase 3) đã sẵn sàng!</p>
           </div>
         )}
       </main>
 
-      {/* Modals */}
-      <AuthModal />
+      {/* Tutor Profile Detail Modal */}
       <TutorDetailModal tutor={selectedTutor} onClose={() => setSelectedTutor(null)} onBook={handleBookTutor} />
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
-        © 2026 TutorMatching - Phase 2 Frontend App | Connected to TutorPlatform.API
+        © 2026 TutorMatching App | Connected to TutorPlatform.API
       </footer>
     </div>
   );
