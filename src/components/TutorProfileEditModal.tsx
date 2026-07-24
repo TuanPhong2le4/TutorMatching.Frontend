@@ -62,7 +62,7 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
               subjectMap[sub.subjectId] = {
                 selected: true,
                 hourlyCredits: sub.hourlyCredits || 50,
-                level: sub.proficiencyLevel || 5,
+                level: sub.proficiencyLevel || 2,
               };
             });
           }
@@ -87,7 +87,7 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         [subjectId]: {
           selected: !existing?.selected,
           hourlyCredits: existing?.hourlyCredits || 50,
-          level: existing?.level || 5,
+          level: existing?.level || 2,
         },
       };
     });
@@ -121,7 +121,7 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         .filter((subId) => selectedSubjects[subId].selected)
         .map((subId) => ({
           subjectId: subId,
-          proficiencyLevel: selectedSubjects[subId].level || 5,
+          proficiencyLevel: selectedSubjects[subId].level || 2,
           hourlyCredits: Number(selectedSubjects[subId].hourlyCredits) || 50,
         }));
 
