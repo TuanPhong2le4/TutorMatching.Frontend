@@ -47,27 +47,28 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         setFullName(profile.fullName || '');
         setPhone(profile.phone || '');
         setAvatarUrl(profile.avatarUrl || '');
-        
+
         if (profile.tutorProfile) {
           setBio(profile.tutorProfile.bio || '');
           setQualifications(profile.tutorProfile.qualifications || '');
           setDefaultMeetingLink(profile.tutorProfile.defaultMeetingLink || '');
 
-          // Map existing subjects
+          // Map existing subjects safely
           const subjectMap: Record<string, { selected: boolean; hourlyCredits: number; level: number }> = {};
-          profile.tutorProfile.subjects.forEach((sub) => {
-            subjectMap[sub.subjectId] = {
-              selected: true,
-              hourlyCredits: sub.hourlyCredits || 50,
-              level: sub.proficiencyLevel || 5,
-            };
-          });
+          if (Array.isArray(profile.tutorProfile.subjects)) {
+            profile.tutorProfile.subjects.forEach((sub) => {
+              subjectMap[sub.subjectId] = {
+                selected: true,
+                hourlyCredits: sub.hourlyCredits || 50,
+                level: sub.proficiencyLevel || 5,
+              };
+            });
+          }
           setSelectedSubjects(subjectMap);
         }
       }
     } catch (err: any) {
-      console.error('Failed to load profile:', err);
-      setMessage({ type: 'error', text: 'Không thể tải thông tin hồ sơ. Vui lòng thử lại.' });
+      console.warn('Profile initially empty or failed to load:', err);
     } finally {
       setLoading(false);
     }
