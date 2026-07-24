@@ -104,21 +104,14 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
       setSaving(true);
       setMessage(null);
 
-      // 1. Update User basic info
-      await profileService.updateUserProfile({
-        fullName,
-        phone,
-        avatarUrl,
-      });
-
-      // 2. Update Tutor Profile bio & qualifications
+      // 1. Update Tutor Details (bio, qualifications, meeting link)
       await profileService.updateTutorProfile({
         bio,
         qualifications,
         defaultMeetingLink,
       });
 
-      // 3. Update Tutor Subjects & Hourly Credits
+      // 2. Update Tutor Subjects & Hourly Credits
       const subjectPayload: SubjectExperienceDto[] = Object.keys(selectedSubjects)
         .filter((subId) => selectedSubjects[subId].selected)
         .map((subId) => ({
@@ -131,14 +124,34 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         await profileService.updateTutorSubjects(subjectPayload);
       }
 
-      setMessage({ type: 'success', text: 'Cập nhật hồ sơ Gia Sư thành công!' });
-      onProfileSaved(); // Refresh tutors list immediately
+      // 3. Update User Basic Info (fullName, phone, avatarUrl) safely
+      let cleanAvatarUrl = avatarUrl?.trim() || '';
+      if (cleanAvatarUrl.length > 2000 && cleanAvatarUrl.startsWith('data:image')) {
+        // Truncate or fallback to standard avatar URL if base64 string is too massive for URL column
+        cleanAvatarUrl = '';
+      }
+
+      try {
+        await profileService.updateUserProfile({
+          fullName,
+          phone,
+          avatarUrl: cleanAvatarUrl || undefined,
+        });
+      } catch (errUser) {
+        console.warn('User basic info update warning:', errUser);
+      }
+
+      setMessage({ type: 'success', text: 'Đã lưu thành công! Thông tin hồ sơ Gia Sư đã được cập nhật cho sinh viên xem.' });
+      
+      // Trigger catalog refresh immediately
+      onProfileSaved();
+      
       setTimeout(() => {
         onClose();
-      }, 1200);
+      }, 1500);
     } catch (err: any) {
       console.error('Failed to save tutor profile:', err);
-      const errText = err?.response?.data?.messages?.[0] || 'Có lỗi xảy ra khi lưu hồ sơ.';
+      const errText = err?.response?.data?.messages?.[0] || 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.';
       setMessage({ type: 'error', text: errText });
     } finally {
       setSaving(false);
@@ -223,7 +236,7 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         {loading ? (
           <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px' }}>Đang tải dữ liệu hồ sơ từ API...</div>
         ) : (
-          <form onSubmit={handleSubmit} autoComplete="off" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleSubmit} autoComplete="off" data-lpignore="true" data-form-type="other" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Full Name & Phone */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
               <div>
@@ -232,6 +245,9 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
                 </label>
                 <input
                   type="text"
+                  name="tutorFullNameNoAutofill"
+                  autoComplete="one-time-code"
+                  data-lpignore="true"
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -253,6 +269,9 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
                 </label>
                 <input
                   type="text"
+                  name="tutorPhoneNoAutofill"
+                  autoComplete="one-time-code"
+                  data-lpignore="true"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="0988xxxxxx"
@@ -273,13 +292,16 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
             {/* Avatar URL */}
             <div>
               <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', color: '#94a3b8' }}>
-                Đường Dẫn Ảnh Đại Diện (Avatar URL)
+                Đường Dẫn Ảnh Đại Diện (URL Ảnh Web HTTP/HTTPS)
               </label>
               <input
                 type="text"
+                name="tutorAvatarUrlNoAutofill"
+                autoComplete="one-time-code"
+                data-lpignore="true"
                 value={avatarUrl}
                 onChange={(e) => setAvatarUrl(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
+                placeholder="https://images.unsplash.com/photo-..."
                 style={{
                   width: '100%',
                   padding: '12px 16px',
@@ -291,6 +313,9 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
                   outline: 'none',
                 }}
               />
+              <span style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                💡 Mẹo: Dùng đường dẫn ảnh Web dạng http/https để ảnh đại diện sắc nét và không kích hoạt popup bộ nhớ trình duyệt.
+              </span>
             </div>
 
             {/* Qualifications */}
@@ -300,6 +325,9 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
               </label>
               <input
                 type="text"
+                name="tutorQualNoAutofill"
+                autoComplete="one-time-code"
+                data-lpignore="true"
                 value={qualifications}
                 onChange={(e) => setQualifications(e.target.value)}
                 placeholder="Ví dụ: Thạc sĩ Đại Học Quốc Gia / IELTS 8.0 / Giải Nhất Quốc Gia..."
@@ -323,6 +351,9 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
               </label>
               <textarea
                 rows={4}
+                name="tutorBioNoAutofill"
+                autoComplete="one-time-code"
+                data-lpignore="true"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Viết vài dòng ngắn gọn mô tả kinh nghiệm, phương pháp giảng dạy và thế mạnh của bạn..."
@@ -347,6 +378,9 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
               </label>
               <input
                 type="text"
+                name="tutorMeetingLinkNoAutofill"
+                autoComplete="one-time-code"
+                data-lpignore="true"
                 value={defaultMeetingLink}
                 onChange={(e) => setDefaultMeetingLink(e.target.value)}
                 placeholder="https://meet.google.com/abc-defg-hij"
@@ -406,6 +440,8 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
                             type="number"
                             min={10}
                             max={500}
+                            name={`subPrice_${sub.id}`}
+                            autoComplete="one-time-code"
                             value={price}
                             onChange={(e) => handlePriceChange(sub.id, Number(e.target.value))}
                             style={{
