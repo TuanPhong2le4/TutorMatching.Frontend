@@ -11,7 +11,7 @@ interface TutorProfileEditModalProps {
 }
 
 export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ isOpen, onClose, onProfileSaved }) => {
-  const { updateUser } = useAuth();
+  const { updateUser, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -161,10 +161,11 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
       console.error('Failed to save tutor profile:', err);
       let errText = err?.response?.data?.messages?.[0] || 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.';
       if (err?.response?.status === 401) {
-        errText = '🔑 Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục lưu hồ sơ!';
+        errText = '🔑 Phiên làm việc đã hết hạn. Đang tự động chuyển về trang Đăng nhập...';
         setTimeout(() => {
-          window.location.reload();
-        }, 2200);
+          onClose();
+          logout();
+        }, 1500);
       }
       setMessage({ type: 'error', text: errText });
     } finally {

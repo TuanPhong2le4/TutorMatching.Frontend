@@ -37,6 +37,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(storedUser);
     }
     setIsLoading(false);
+
+    const handleUnauthorized = () => {
+      authService.logout();
+      setUser(null);
+      setToken(null);
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
   }, []);
 
   const openAuthModal = (mode: 'login' | 'register' = 'login') => {
