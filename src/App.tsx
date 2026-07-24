@@ -6,6 +6,7 @@ import { TutorSearchResult, Subject } from './types/tutor';
 import { TutorCard } from './components/TutorCard';
 import { TutorDetailModal } from './components/TutorDetailModal';
 import { TutorSearchFilter } from './components/TutorSearchFilter';
+import { TutorProfileEditModal } from './components/TutorProfileEditModal';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -16,6 +17,7 @@ export default function App() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedTutor, setSelectedTutor] = useState<TutorSearchResult | null>(null);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState<boolean>(false);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -27,6 +29,8 @@ export default function App() {
 
   // Booking notification toast state
   const [bookingNotice, setBookingNotice] = useState<string | null>(null);
+
+  const isTutorRole = Number(user?.role) === 1 || user?.role === 'Tutor';
 
   // Load Subjects on mount
   useEffect(() => {
@@ -132,10 +136,31 @@ export default function App() {
 
         {/* User Profile & Logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {isTutorRole && (
+            <button
+              onClick={() => setIsProfileEditOpen(true)}
+              style={{
+                background: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid #38bdf8',
+                color: '#38bdf8',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              ⚙️ Cập Nhật Hồ Sơ Gia Sư
+            </button>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user?.fullName}</span>
             <span style={{ fontSize: '12px', color: '#38bdf8' }}>
-              {Number(user?.role) === 2 || user?.role === 'Student' ? '🎓 Học Viên' : Number(user?.role) === 1 || user?.role === 'Tutor' ? '👨‍🏫 Gia Sư' : '👑 Admin'}
+              {Number(user?.role) === 2 || user?.role === 'Student' ? '🎓 Học Viên' : isTutorRole ? '👨‍🏫 Gia Sư' : '👑 Admin'}
             </span>
           </div>
 
@@ -197,6 +222,23 @@ export default function App() {
                 <button className="btn-primary" style={{ padding: '14px 32px', fontSize: '16px' }} onClick={() => setActiveTab('tutors')}>
                   🔍 Khám Phá {totalCount > 0 ? `${totalCount} Gia Sư` : 'Danh Sách Gia Sư'}
                 </button>
+                {isTutorRole && (
+                  <button
+                    onClick={() => setIsProfileEditOpen(true)}
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      border: '1px solid #38bdf8',
+                      color: '#38bdf8',
+                      padding: '14px 28px',
+                      fontSize: '16px',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⚙️ Cập Nhật Hồ Sơ Gia Sư Của Tôi
+                  </button>
+                )}
               </div>
             </div>
 
@@ -338,6 +380,13 @@ export default function App() {
 
       {/* Tutor Profile Detail Modal */}
       <TutorDetailModal tutor={selectedTutor} onClose={() => setSelectedTutor(null)} onBook={handleBookTutor} />
+
+      {/* Tutor Profile Edit Modal */}
+      <TutorProfileEditModal
+        isOpen={isProfileEditOpen}
+        onClose={() => setIsProfileEditOpen(false)}
+        onProfileSaved={fetchTutors}
+      />
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
