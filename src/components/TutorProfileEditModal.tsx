@@ -132,10 +132,10 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
       }
 
       setMessage({ type: 'success', text: 'Cập nhật hồ sơ Gia Sư thành công!' });
+      onProfileSaved(); // Refresh tutors list immediately
       setTimeout(() => {
-        onProfileSaved();
         onClose();
-      }, 1500);
+      }, 1200);
     } catch (err: any) {
       console.error('Failed to save tutor profile:', err);
       const errText = err?.response?.data?.messages?.[0] || 'Có lỗi xảy ra khi lưu hồ sơ.';
@@ -223,7 +223,7 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         {loading ? (
           <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px' }}>Đang tải dữ liệu hồ sơ từ API...</div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <form onSubmit={handleSubmit} autoComplete="off" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Full Name & Phone */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
               <div>
