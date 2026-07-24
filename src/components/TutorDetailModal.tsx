@@ -1,0 +1,185 @@
+import React from 'react';
+import { TutorSearchResult } from '../types/tutor';
+
+interface TutorDetailModalProps {
+  tutor: TutorSearchResult | null;
+  onClose: () => void;
+  onBook: (tutor: TutorSearchResult) => void;
+}
+
+export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClose, onBook }) => {
+  if (!tutor) return null;
+
+  const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(tutor.fullName)}&background=0D8ABC&color=fff&size=128`;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1100,
+        padding: '16px',
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="glass-panel"
+        style={{
+          width: '100%',
+          maxWidth: '680px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          padding: '32px',
+          borderRadius: '20px',
+          position: 'relative',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.6)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'none',
+            border: 'none',
+            color: '#94a3b8',
+            fontSize: '22px',
+            cursor: 'pointer',
+          }}
+        >
+          ✕
+        </button>
+
+        {/* Profile Header */}
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '24px' }}>
+          <img
+            src={tutor.avatarUrl || defaultAvatar}
+            alt={tutor.fullName}
+            style={{
+              width: '90px',
+              height: '90px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '3px solid #38bdf8',
+              boxShadow: '0 0 20px rgba(56, 189, 248, 0.3)',
+            }}
+          />
+          <div>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#fff', marginBottom: '6px' }}>
+              {tutor.fullName}
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+              <span style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '4px 10px', borderRadius: '20px', fontWeight: '700', fontSize: '13px' }}>
+                ⭐ {tutor.averageRating > 0 ? tutor.averageRating.toFixed(1) : '5.0'} / 5.0
+              </span>
+              <span style={{ color: '#94a3b8', fontSize: '13px' }}>
+                💬 {tutor.totalReviews} đánh giá • 🎓 {tutor.totalSessions} buổi dạy
+              </span>
+            </div>
+            {tutor.qualifications && (
+              <div style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 500 }}>
+                📜 {tutor.qualifications}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <hr style={{ borderColor: 'rgba(255, 255, 255, 0.1)', marginBottom: '24px' }} />
+
+        {/* Biography Section */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ fontSize: '16px', color: '#e2e8f0', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            👤 Giới Thiệu Bản Thân
+          </h4>
+          <p style={{ fontSize: '14px', color: '#cbd5e1', lineHeight: '1.6', backgroundColor: 'rgba(15, 23, 42, 0.4)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            {tutor.bio || 'Gia sư giàu kinh nghiệm, tâm huyết với nghề. Giúp học viên nắm vững kiến thức từ cơ bản đến nâng cao.'}
+          </p>
+        </div>
+
+        {/* Subjects & Rates Section */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ fontSize: '16px', color: '#e2e8f0', marginBottom: '12px' }}>
+            📚 Môn Giảng Dạy & Học Phí Tín Chỉ
+          </h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+            {tutor.subjects?.map((sub) => (
+              <div
+                key={sub.subjectId}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: '600', color: '#fff', fontSize: '14px' }}>{sub.subjectName}</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Trình độ: Cấp độ {sub.proficiencyLevel}</div>
+                </div>
+                <div style={{ fontWeight: '700', color: '#a855f7', fontSize: '15px' }}>
+                  💎 {sub.hourlyCredits} <span style={{ fontSize: '11px', color: '#94a3b8' }}>/giờ</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Schedule Overview Info */}
+        <div style={{ marginBottom: '28px', backgroundColor: 'rgba(56, 189, 248, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+          <div style={{ fontWeight: '600', color: '#38bdf8', fontSize: '14px', marginBottom: '4px' }}>
+            📅 Lịch Rảnh Linh Hoạt
+          </div>
+          <div style={{ fontSize: '13px', color: '#cbd5e1' }}>
+            Gia sư sẵn sàng xếp lịch giảng dạy vào các buổi Sáng / Chiều / Tối các ngày trong tuần.
+          </div>
+        </div>
+
+        {/* Modal Actions */}
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '12px 20px',
+              borderRadius: '10px',
+              border: '1px solid rgba(255,255,255,0.2)',
+              backgroundColor: 'transparent',
+              color: '#94a3b8',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Đóng
+          </button>
+          <button
+            onClick={() => {
+              onClose();
+              onBook(tutor);
+            }}
+            className="btn-primary"
+            style={{
+              padding: '12px 24px',
+              fontSize: '14px',
+            }}
+          >
+            🗓️ Đặt Lịch Học Với Gia Sư
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
