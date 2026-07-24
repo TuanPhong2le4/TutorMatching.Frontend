@@ -159,7 +159,13 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
       }, 1200);
     } catch (err: any) {
       console.error('Failed to save tutor profile:', err);
-      const errText = err?.response?.data?.messages?.[0] || 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.';
+      let errText = err?.response?.data?.messages?.[0] || 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.';
+      if (err?.response?.status === 401) {
+        errText = '🔑 Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục lưu hồ sơ!';
+        setTimeout(() => {
+          window.location.reload();
+        }, 2200);
+      }
       setMessage({ type: 'error', text: errText });
     } finally {
       setSaving(false);
