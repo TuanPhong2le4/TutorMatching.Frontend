@@ -1,0 +1,268 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { creditService, CreditTransactionDto } from '../services/creditService';
+import { WalletDepositModal } from './WalletDepositModal';
+
+interface WalletDashboardProps {
+  balance: number | null;
+  onBalanceChanged: (newBalance: number) => void;
+}
+
+export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBalanceChanged }) => {
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<CreditTransactionDto[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [isDepositOpen, setIsDepositOpen] = useState<boolean>(false);
+
+  const isStudent = Number(user?.role) === 0 || user?.role === 'Student';
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [page]);
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      const res = await creditService.getTransactions(page, 10);
+      setTransactions(res.items || []);
+      setTotalCount(res.totalCount || 0);
+      setTotalPages(Math.ceil((res.totalCount || 0) / 10));
+    } catch (err) {
+      console.error('Failed to load transaction history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDepositSuccess = (newBalance: number) => {
+    onBalanceChanged(newBalance);
+    setPage(1);
+    fetchTransactions();
+  };
+
+  // Convert transaction type to readable text & styled badge properties
+  const getTransactionBadgeProps = (type: string | number) => {
+    const typeStr = type.toString().toLowerCase();
+
+    // Enum mapping: Credit=0, Debit=1, Transfer=2, Refund=3
+    if (typeStr === '0' || typeStr === 'credit') {
+      return {
+        text: '➕ Nạp Tiền',
+        style: { color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)' },
+        prefix: '+'
+      };
+    }
+    if (typeStr === '1' || typeStr === 'debit') {
+      return {
+        text: '➖ Tạm Giữ',
+        style: { color: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.15)' },
+        prefix: '-'
+      };
+    }
+    if (typeStr === '2' || typeStr === 'transfer') {
+      return {
+        text: '💸 Thanh Toán',
+        style: { color: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.15)' },
+        prefix: '-'
+      };
+    }
+    if (typeStr === '3' || typeStr === 'refund') {
+      return {
+        text: '🔄 Hoàn Tiền',
+        style: { color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)' },
+        prefix: '+'
+      };
+    }
+
+    // Fallback default
+    return {
+      text: 'Giao Dịch',
+      style: { color: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.15)' },
+      prefix: ''
+    };
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+        {/* Wallet Balance Banner card */}
+        <div
+          className="glass-panel"
+          style={{
+            padding: '28px',
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 10px 30px -10px rgba(0,0,0,0.3)',
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              💎 SỐ DƯ VÍ TÍN DỤNG
+            </span>
+            <span style={{ fontSize: '36px', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px' }}>
+              {balance !== null ? balance.toFixed(1) : '...'}
+              <span style={{ fontSize: '18px', color: '#a855f7', marginLeft: '6px', fontWeight: '600' }}>tín chỉ</span>
+            </span>
+            <span style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginTop: '12px' }}>
+              Tài khoản: <strong>{user?.fullName}</strong> ({isStudent ? 'Học Viên' : 'Gia Sư'})
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+            <div style={{ fontSize: '48px', opacity: 0.9 }}>💎</div>
+            {isStudent && (
+              <button
+                onClick={() => setIsDepositOpen(true)}
+                className="btn-primary"
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                💳 Nạp Tiền
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Informational help card */}
+        <div
+          className="glass-panel"
+          style={{
+            padding: '24px',
+            borderRadius: '20px',
+            border: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}
+        >
+          <h4 style={{ fontSize: '15px', color: '#fff', fontWeight: 700, marginBottom: '8px' }}>
+            {isStudent ? '💡 Quy trình giao dịch tín dụng:' : '🎓 Nhận tín dụng giảng dạy:'}
+          </h4>
+          <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.6', margin: 0 }}>
+            {isStudent ? (
+              'Khi bạn đặt lịch học với gia sư, hệ thống sẽ tự động tạm giữ (Debit) số tín chỉ tương ứng. Khi buổi học được Gia sư xác nhận hoàn thành, số tín chỉ này sẽ chuyển thẳng tới tài khoản của Gia sư. Nếu lịch học bị hủy, số tín chỉ tạm giữ sẽ được hoàn lại (Refund) ví của bạn.'
+            ) : (
+              'Số tín chỉ của các buổi dạy học sẽ tự động được cộng vào ví của bạn (Transfer) ngay sau khi buổi học được xác nhận hoàn thành. Tín chỉ tích lũy có thể dùng để quy đổi hoặc giao dịch trong hệ thống.'
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Transaction History Log Section */}
+      <div className="glass-panel" style={{ padding: '28px', borderRadius: '20px' }}>
+        <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '20px', color: '#fff' }}>
+          📜 Lịch Sử Giao Dịch
+        </h3>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>Đang tải lịch sử giao dịch...</div>
+        ) : transactions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>💸</div>
+            <h4 style={{ color: '#fff', fontSize: '16px', marginBottom: '6px' }}>Chưa Có Giao Dịch Nào</h4>
+            <p style={{ fontSize: '13px', maxWidth: '360px', margin: '0 auto' }}>
+              Mọi lịch sử nạp tiền, hoàn tiền hoặc thanh toán khóa học sẽ hiển thị ở đây.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>LOẠI GIAO DỊCH</th>
+                    <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>SỐ LƯỢNG</th>
+                    <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>NỘI DUNG CHI TIẾT</th>
+                    <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>SỐ DƯ SAU GIAO DỊCH</th>
+                    <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>THỜI GIAN</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map((tx) => {
+                    const badge = getTransactionBadgeProps(tx.type);
+                    const formattedDate = new Date(tx.createdAt).toLocaleString('vi-VN');
+
+                    return (
+                      <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '14px' }}>
+                        <td style={{ padding: '16px' }}>
+                          <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, ...badge.style }}>
+                            {badge.text}
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px', fontWeight: 700, color: badge.prefix === '+' ? '#34d399' : '#f87171' }}>
+                          {badge.prefix} {tx.amount.toFixed(1)} tc
+                        </td>
+                        <td style={{ padding: '16px', color: '#cbd5e1' }}>{tx.description}</td>
+                        <td style={{ padding: '16px', fontWeight: 600, color: '#fff' }}>💎 {tx.balanceAfter.toFixed(1)} tc</td>
+                        <td style={{ padding: '16px', color: '#94a3b8', fontSize: '12px' }}>{formattedDate}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    backgroundColor: 'rgba(15,23,42,0.6)',
+                    color: page === 1 ? '#64748b' : '#fff',
+                    cursor: page === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '13px',
+                  }}
+                >
+                  Trước
+                </button>
+                <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13px', color: '#94a3b8' }}>
+                  Trang {page} / {totalPages}
+                </span>
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    backgroundColor: 'rgba(15,23,42,0.6)',
+                    color: page === totalPages ? '#64748b' : '#fff',
+                    cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: '13px',
+                  }}
+                >
+                  Sau
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Deposit Modal */}
+      <WalletDepositModal
+        isOpen={isDepositOpen}
+        onClose={() => setIsDepositOpen(false)}
+        onDepositSuccess={handleDepositSuccess}
+      />
+    </div>
+  );
+};

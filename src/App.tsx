@@ -10,10 +10,15 @@ import { TutorProfileEditModal } from './components/TutorProfileEditModal';
 import { BookingModal } from './components/BookingModal';
 import { AvailabilityManager } from './components/AvailabilityManager';
 import { bookingService, BookingDto } from './services/bookingService';
+import { WalletDashboard } from './components/WalletDashboard';
+import { creditService } from './services/creditService';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet'>('home');
+
+  // Phase 4 Wallet State
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   // Phase 2 Tutors Search & Filter States
   const [tutors, setTutors] = useState<TutorSearchResult[]>([]);
@@ -65,6 +70,21 @@ export default function App() {
     };
     fetchSubjects();
   }, [isAuthenticated]);
+
+  const fetchWalletBalance = async () => {
+    try {
+      const data = await creditService.getBalance();
+      setWalletBalance(data.creditBalance);
+    } catch (err) {
+      console.error('Failed to load wallet balance:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchWalletBalance();
+    }
+  }, [isAuthenticated, activeTab]);
 
   // Fetch Tutors when filters or activeTab change
   useEffect(() => {
@@ -134,6 +154,7 @@ export default function App() {
     setTimeout(() => setBookingNotice(null), 5000);
     setBookingsPage(1);
     setActiveTab('bookings');
+    fetchWalletBalance();
   };
 
   const handleCancelBooking = async (e: React.FormEvent) => {
@@ -147,6 +168,7 @@ export default function App() {
       setBookingNotice('Đã hủy lịch học thành công.');
       setTimeout(() => setBookingNotice(null), 5000);
       fetchBookings();
+      fetchWalletBalance();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Không thể hủy lịch học. Vui lòng thử lại.');
     } finally {
@@ -165,6 +187,7 @@ export default function App() {
       setBookingNotice('Đã xác nhận lớp học thành công.');
       setTimeout(() => setBookingNotice(null), 5000);
       fetchBookings();
+      fetchWalletBalance();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Không thể xác nhận lịch học. Vui lòng thử lại.');
     } finally {
@@ -191,6 +214,7 @@ export default function App() {
       setBookingNotice('Đã hoàn thành buổi học.');
       setTimeout(() => setBookingNotice(null), 5000);
       fetchBookings();
+      fetchWalletBalance();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Có lỗi xảy ra.');
     }
@@ -241,6 +265,11 @@ export default function App() {
             style={{ background: 'none', border: 'none', color: activeTab === 'bookings' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
             🗓️ Lịch Học
           </button>
+          <button 
+            onClick={() => setActiveTab('wallet')}
+            style={{ background: 'none', border: 'none', color: activeTab === 'wallet' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
+            💎 Ví Tín Dụng
+          </button>
         </nav>
 
         {/* User Profile & Logout */}
@@ -265,6 +294,29 @@ export default function App() {
               ⚙️ Cập Nhật Hồ Sơ Gia Sư
             </button>
           )}
+
+          {/* Wallet Balance Pill */}
+          <div
+            onClick={() => setActiveTab('wallet')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
+              color: '#c084fc',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 700,
+              transition: 'all 0.2s',
+            }}
+            title="Xem ví tín dụng"
+          >
+            <span>💎</span>
+            <span>{walletBalance !== null ? walletBalance.toFixed(1) : '...'} tc</span>
+          </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user?.fullName}</span>
@@ -773,6 +825,11 @@ export default function App() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Tab 4: Wallet Dashboard */}
+        {activeTab === 'wallet' && (
+          <WalletDashboard balance={walletBalance} onBalanceChanged={setWalletBalance} />
         )}
       </main>
 
