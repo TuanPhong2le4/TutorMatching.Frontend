@@ -95,6 +95,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
     }
     if (duration <= 0) return { isValid: false, reason: 'Giờ kết thúc phải sau giờ bắt đầu.' };
 
+    // Validate if the selected date and time is in the past
+    const now = new Date();
+    const [startH, startM] = startTime.split(':').map(Number);
+    const selectedStartDateTime = new Date(bookingDate);
+    selectedStartDateTime.setHours(startH, startM, 0, 0);
+
+    if (selectedStartDateTime < now) {
+      return { isValid: false, reason: 'Không thể đặt lịch học ở thời gian trong quá khứ.' };
+    }
+
     const selectedDate = new Date(bookingDate);
     const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
