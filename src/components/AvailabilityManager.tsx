@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { availabilityService, AvailabilityDto, UpdateAvailabilityRequestItem } from '../services/availabilityService';
 
+const timeOptions = (() => {
+  const options = [];
+  for (let i = 0; i < 24; i++) {
+    const hour = i.toString().padStart(2, '0');
+    options.push(`${hour}:00`);
+    options.push(`${hour}:30`);
+  }
+  return options;
+})();
+
 export const AvailabilityManager: React.FC = () => {
   const { user } = useAuth();
   const [slots, setSlots] = useState<AvailabilityDto[]>([]);
@@ -202,8 +212,7 @@ export const AvailabilityManager: React.FC = () => {
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Bắt Đầu:</label>
-              <input
-                type="time"
+              <select
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 style={{
@@ -216,12 +225,15 @@ export const AvailabilityManager: React.FC = () => {
                   fontSize: '14px',
                   outline: 'none',
                 }}
-              />
+              >
+                {timeOptions.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Kết Thúc:</label>
-              <input
-                type="time"
+              <select
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 style={{
@@ -234,7 +246,11 @@ export const AvailabilityManager: React.FC = () => {
                   fontSize: '14px',
                   outline: 'none',
                 }}
-              />
+              >
+                {timeOptions.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
             </div>
           </div>
 

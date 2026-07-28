@@ -11,6 +11,16 @@ interface BookingModalProps {
   onBookingSuccess: () => void;
 }
 
+const timeOptions = (() => {
+  const options = [];
+  for (let i = 0; i < 24; i++) {
+    const hour = i.toString().padStart(2, '0');
+    options.push(`${hour}:00`);
+    options.push(`${hour}:30`);
+  }
+  return options;
+})();
+
 export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClose, onBookingSuccess }) => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [bookingDate, setBookingDate] = useState<string>('');
@@ -230,8 +240,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Từ:</label>
-                <input
-                  type="time"
+                <select
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
                   style={{
@@ -244,12 +253,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
                     fontSize: '14px',
                     outline: 'none',
                   }}
-                />
+                >
+                  {timeOptions.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Đến:</label>
-                <input
-                  type="time"
+                <select
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
                   style={{
@@ -262,7 +274,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
                     fontSize: '14px',
                     outline: 'none',
                   }}
-                />
+                >
+                  {timeOptions.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
