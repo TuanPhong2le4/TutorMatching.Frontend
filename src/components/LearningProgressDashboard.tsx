@@ -41,14 +41,9 @@ export const LearningProgressDashboard: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch goals
-      const goalsList = await progressService.getLearningGoals(
-        isTutor ? (selectedStudentId || undefined) : undefined,
-        selectedSubjectId || undefined
-      );
-      setGoals(goalsList || []);
+      let currentStudentId = selectedStudentId;
 
-      // If tutor, load active students & subjects from bookings
+      // If tutor, load active students & subjects from bookings first
       if (isTutor && students.length === 0) {
         const bookingsRes = await bookingService.getMyBookings(1, 100);
         const uniqueStudentsMap = new Map<string, string>();
@@ -68,14 +63,33 @@ export const LearningProgressDashboard: React.FC = () => {
         
         setStudents(loadedStudents);
         setMySubjects(loadedSubjects);
+
+        if (loadedStudents.length > 0) {
+          currentStudentId = loadedStudents[0].id;
+          setSelectedStudentId(currentStudentId);
+        }
       }
+
+      // If tutor and no student is selected yet, we cannot query goals
+      if (isTutor && !currentStudentId) {
+        setGoals([]);
+        setChartData(null);
+        return;
+      }
+
+      // Fetch goals
+      const goalsList = await progressService.getLearningGoals(
+        isTutor ? currentStudentId : undefined,
+        selectedSubjectId || undefined
+      );
+      setGoals(goalsList || []);
 
       // If student, build subjects list from goals list if not already
       if (isStudent && selectedSubjectId) {
         const chart = await progressService.getProgressChartData(selectedSubjectId);
         setChartData(chart);
-      } else if (isTutor && selectedStudentId && selectedSubjectId) {
-        const chart = await progressService.getProgressChartData(selectedSubjectId, selectedStudentId);
+      } else if (isTutor && currentStudentId && selectedSubjectId) {
+        const chart = await progressService.getProgressChartData(selectedSubjectId, currentStudentId);
         setChartData(chart);
       } else {
         setChartData(null);
@@ -425,6 +439,14 @@ export const LearningProgressDashboard: React.FC = () => {
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>Đang tải mục tiêu...</div>
+          ) : isTutor && !selectedStudentId ? (
+            <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px' }}>👤</div>
+              <h4 style={{ color: '#fff', fontSize: '15px', marginBottom: '6px' }}>Chưa chọn học viên</h4>
+              <p style={{ fontSize: '13px' }}>
+                Vui lòng chọn một học viên cụ thể ở danh sách phía trên để xem và quản lý tiến độ mục tiêu học tập.
+              </p>
+            </div>
           ) : goals.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
               <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎯</div>
