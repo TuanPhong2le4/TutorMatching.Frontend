@@ -268,7 +268,7 @@ export default function App() {
           <button 
             onClick={() => setActiveTab('wallet')}
             style={{ background: 'none', border: 'none', color: activeTab === 'wallet' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-            💎 Ví Tín Dụng
+            {Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Duyệt Nạp Tiền' : '💎 Ví Tín Dụng'}
           </button>
         </nav>
 
@@ -296,27 +296,29 @@ export default function App() {
           )}
 
           {/* Wallet Balance Pill */}
-          <div
-            onClick={() => setActiveTab('wallet')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              backgroundColor: 'rgba(168, 85, 247, 0.15)',
-              border: '1px solid rgba(168, 85, 247, 0.3)',
-              color: '#c084fc',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 700,
-              transition: 'all 0.2s',
-            }}
-            title="Xem ví tín dụng"
-          >
-            <span>💎</span>
-            <span>{walletBalance !== null ? walletBalance.toFixed(1) : '...'} tc</span>
-          </div>
+          {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
+            <div
+              onClick={() => setActiveTab('wallet')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                color: '#c084fc',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: 700,
+                transition: 'all 0.2s',
+              }}
+              title="Xem ví tín dụng"
+            >
+              <span>💎</span>
+              <span>{walletBalance !== null ? walletBalance.toFixed(1) : '...'} tc</span>
+            </div>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user?.fullName}</span>

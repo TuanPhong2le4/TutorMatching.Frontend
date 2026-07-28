@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { creditService, CreditTransactionDto } from '../services/creditService';
+import { creditService, CreditTransactionDto, AdminDepositRequestDto } from '../services/creditService';
 import { WalletDepositModal } from './WalletDepositModal';
 
 interface WalletDashboardProps {
@@ -17,11 +17,24 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isDepositOpen, setIsDepositOpen] = useState<boolean>(false);
 
-  const isStudent = Number(user?.role) === 0 || user?.role === 'Student';
+  // Admin specific states
+  const [adminRequests, setAdminRequests] = useState<AdminDepositRequestDto[]>([]);
+  const [adminPage, setAdminPage] = useState<number>(1);
+  const [adminTotalPages, setAdminTotalPages] = useState<number>(1);
+  const [adminTotalCount, setAdminTotalCount] = useState<number>(0);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const isStudent = Number(user?.role) === 2 || user?.role === 'Student';
+  const isTutor = Number(user?.role) === 1 || user?.role === 'Tutor';
+  const isAdmin = Number(user?.role) === 0 || user?.role === 'Admin';
 
   useEffect(() => {
-    fetchTransactions();
-  }, [page]);
+    if (isAdmin) {
+      fetchAdminRequests();
+    } else {
+      fetchTransactions();
+    }
+  }, [page, adminPage, isAdmin]);
 
   const fetchTransactions = async () => {
     try {
@@ -37,10 +50,54 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
     }
   };
 
+  const fetchAdminRequests = async () => {
+    try {
+      setLoading(true);
+      const res = await creditService.getAdminDepositRequests(adminPage, 10);
+      setAdminRequests(res.items || []);
+      setAdminTotalCount(res.totalCount || 0);
+      setAdminTotalPages(Math.ceil((res.totalCount || 0) / 10));
+    } catch (err) {
+      console.error('Failed to load admin deposit requests:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDepositSuccess = (newBalance: number) => {
     onBalanceChanged(newBalance);
     setPage(1);
     fetchTransactions();
+  };
+
+  const handleApproveRequest = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn PHÊ DUYỆT yêu cầu nạp tiền này?')) return;
+    try {
+      setProcessingId(id);
+      await creditService.approveDepositRequest(id);
+      alert('Đã duyệt yêu cầu nạp tiền thành công!');
+      fetchAdminRequests();
+      // If the admin's balance also changes or we just refresh global balance
+      creditService.getBalance().then(data => onBalanceChanged(data.creditBalance)).catch(e => console.error(e));
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra khi phê duyệt.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectRequest = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn TỪ CHỐI yêu cầu nạp tiền này?')) return;
+    try {
+      setProcessingId(id);
+      await creditService.rejectDepositRequest(id);
+      alert('Đã từ chối yêu cầu nạp tiền.');
+      fetchAdminRequests();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra khi từ chối.');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   // Convert transaction type to readable text & styled badge properties
@@ -85,6 +142,176 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
     };
   };
 
+  if (isAdmin) {
+    return (
+      <div>
+        {/* Admin Dashboard header */}
+        <div style={{ marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '4px' }}>
+            🏦 Quản Lý Yêu Cầu Nạp Tiền
+          </h2>
+          <p style={{ color: '#94a3b8', fontSize: '15px' }}>
+            Phê duyệt hoặc từ chối các yêu cầu nạp tiền từ Học viên và Gia sư trong hệ thống.
+          </p>
+        </div>
+
+        {/* Requests Table */}
+        <div className="glass-panel" style={{ padding: '28px', borderRadius: '20px' }}>
+          <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '20px', color: '#fff' }}>
+            📋 Danh Sách Yêu Cầu Chờ Duyệt ({adminTotalCount})
+          </h3>
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>Đang tải yêu cầu nạp tiền...</div>
+          ) : adminRequests.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🏦</div>
+              <h4 style={{ color: '#fff', fontSize: '16px', marginBottom: '6px' }}>Không Có Yêu Cầu Nào</h4>
+              <p style={{ fontSize: '13px', maxWidth: '360px', margin: '0 auto' }}>
+                Hiện tại không có yêu cầu nạp tiền nào cần được phê duyệt.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>TÀI KHOẢN YÊU CẦU</th>
+                      <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>VAI TRÒ</th>
+                      <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>SỐ TIỀN YÊU CẦU</th>
+                      <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>NGÀY GỬI</th>
+                      <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>TRẠNG THÁI</th>
+                      <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>THAO TÁC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminRequests.map((r) => {
+                      const formattedDate = new Date(r.createdAt).toLocaleString('vi-VN');
+                      const isPending = r.status === 0;
+
+                      // Status style
+                      let statusText = 'Chờ duyệt';
+                      let statusStyle = { color: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.15)' };
+                      if (r.status === 1) {
+                        statusText = 'Đã duyệt';
+                        statusStyle = { color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)' };
+                      } else if (r.status === 2) {
+                        statusText = 'Từ chối';
+                        statusStyle = { color: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.15)' };
+                      }
+
+                      return (
+                        <tr key={r.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '14px' }}>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ fontWeight: 600, color: '#fff' }}>{r.requesterName}</div>
+                            <div style={{ fontSize: '12px', color: '#94a3b8' }}>{r.requesterEmail}</div>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ fontSize: '13px', color: r.requesterRole === 'Student' ? '#38bdf8' : '#a855f7' }}>
+                              {r.requesterRole === 'Student' ? '🎓 Học Viên' : '👨‍🏫 Gia Sư'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px', fontWeight: 700, color: '#38bdf8', fontSize: '15px' }}>
+                            💎 {r.amount.toFixed(1)} tc
+                          </td>
+                          <td style={{ padding: '16px', color: '#cbd5e1' }}>{formattedDate}</td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, ...statusStyle }}>
+                              {statusText}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            {isPending ? (
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                  disabled={processingId !== null}
+                                  onClick={() => handleApproveRequest(r.id)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: '#10b981',
+                                    border: 'none',
+                                    color: '#fff',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  {processingId === r.id ? 'Đang duyệt...' : '✔️ Duyệt'}
+                                </button>
+                                <button
+                                  disabled={processingId !== null}
+                                  onClick={() => handleRejectRequest(r.id)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#f87171',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  ❌ Từ Chối
+                                </button>
+                              </div>
+                            ) : (
+                              <span style={{ color: '#64748b', fontSize: '12px' }}>Đã xử lý</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Admin Pagination */}
+              {adminTotalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
+                  <button
+                    disabled={adminPage === 1}
+                    onClick={() => setAdminPage(prev => Math.max(prev - 1, 1))}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      backgroundColor: 'rgba(15,23,42,0.6)',
+                      color: adminPage === 1 ? '#64748b' : '#fff',
+                      cursor: adminPage === 1 ? 'not-allowed' : 'pointer',
+                      fontSize: '13px',
+                    }}
+                  >
+                    Trước
+                  </button>
+                  <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13px', color: '#94a3b8' }}>
+                    Trang {adminPage} / {adminTotalPages}
+                  </span>
+                  <button
+                    disabled={adminPage === adminTotalPages}
+                    onClick={() => setAdminPage(prev => Math.min(prev + 1, adminTotalPages))}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      backgroundColor: 'rgba(15,23,42,0.6)',
+                      color: adminPage === adminTotalPages ? '#64748b' : '#fff',
+                      cursor: adminPage === adminTotalPages ? 'not-allowed' : 'pointer',
+                      fontSize: '13px',
+                    }}
+                  >
+                    Sau
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '32px' }}>
@@ -111,13 +338,13 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
               <span style={{ fontSize: '18px', color: '#a855f7', marginLeft: '6px', fontWeight: '600' }}>tín chỉ</span>
             </span>
             <span style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginTop: '12px' }}>
-              Tài khoản: <strong>{user?.fullName}</strong> ({isStudent ? 'Học Viên' : 'Gia Sư'})
+              Tài khoản: <strong>{user?.fullName}</strong> ({isStudent ? 'Học Viên' : isTutor ? 'Gia Sư' : 'Admin'})
             </span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
             <div style={{ fontSize: '48px', opacity: 0.9 }}>💎</div>
-            {isStudent && (
+            {(isStudent || isTutor) && (
               <button
                 onClick={() => setIsDepositOpen(true)}
                 className="btn-primary"
@@ -129,8 +356,9 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                   alignItems: 'center',
                   gap: '6px',
                 }}
+                title="Gửi yêu cầu nạp tiền tới Admin"
               >
-                💳 Nạp Tiền
+                💳 Gửi Yêu Cầu Nạp
               </button>
             )}
           </div>
