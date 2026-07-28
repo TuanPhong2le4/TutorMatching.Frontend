@@ -645,6 +645,7 @@ export default function App() {
                             const end = new Date(b.scheduledEndAt);
                             const formattedDate = start.toLocaleDateString('vi-VN');
                             const formattedTime = `${start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+                            const isStarted = new Date() >= start;
 
                             // Status badge config
                             let statusText = 'Chờ duyệt';
@@ -828,7 +829,9 @@ export default function App() {
 
                                     {/* Actions for completed bookings */}
                                     {!isTutorRole && b.status === 2 && (
-                                      b.isStudentReviewed ? (
+                                      !isStarted ? (
+                                        <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>⏰ Chưa đến giờ học</span>
+                                      ) : b.isStudentReviewed ? (
                                         <span style={{ fontSize: '13px', color: '#34d399', fontWeight: 600 }}>✓ Đã đánh giá</span>
                                       ) : (
                                         <button
@@ -854,50 +857,54 @@ export default function App() {
                                     )}
 
                                     {isTutorRole && b.status === 2 && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {b.isTutorReviewed ? (
-                                          <span style={{ fontSize: '13px', color: '#c084fc', fontWeight: 600 }}>✓ Đã đánh giá học viên</span>
-                                        ) : (
+                                      !isStarted ? (
+                                        <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>⏰ Chưa đến giờ học</span>
+                                      ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                          {b.isTutorReviewed ? (
+                                            <span style={{ fontSize: '13px', color: '#c084fc', fontWeight: 600 }}>✓ Đã đánh giá học viên</span>
+                                          ) : (
+                                            <button
+                                              onClick={() => {
+                                                setReviewBookingId(b.id);
+                                                setReviewTutorName(b.studentName);
+                                                setReviewSubjectName(b.subjectName);
+                                              }}
+                                              style={{
+                                                padding: '6px 12px',
+                                                backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                                                border: '1px solid rgba(168, 85, 247, 0.3)',
+                                                color: '#c084fc',
+                                                borderRadius: '6px',
+                                                fontSize: '12px',
+                                                cursor: 'pointer',
+                                                fontWeight: 600,
+                                              }}
+                                            >
+                                              ✍️ Đánh Giá Học Viên
+                                            </button>
+                                          )}
                                           <button
                                             onClick={() => {
-                                              setReviewBookingId(b.id);
-                                              setReviewTutorName(b.studentName);
-                                              setReviewSubjectName(b.subjectName);
+                                              setSessionRecordBookingId(b.id);
+                                              setSessionStudentName(b.studentName);
+                                              setSessionSubjectName(b.subjectName);
                                             }}
                                             style={{
                                               padding: '6px 12px',
-                                              backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                                              border: '1px solid rgba(168, 85, 247, 0.3)',
-                                              color: '#c084fc',
+                                              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                                              border: '1px solid rgba(56, 189, 248, 0.3)',
+                                              color: '#38bdf8',
                                               borderRadius: '6px',
                                               fontSize: '12px',
                                               cursor: 'pointer',
                                               fontWeight: 600,
                                             }}
                                           >
-                                            ✍️ Đánh Giá Học Viên
+                                            📝 Báo Cáo Buổi Học
                                           </button>
-                                        )}
-                                        <button
-                                          onClick={() => {
-                                            setSessionRecordBookingId(b.id);
-                                            setSessionStudentName(b.studentName);
-                                            setSessionSubjectName(b.subjectName);
-                                          }}
-                                          style={{
-                                            padding: '6px 12px',
-                                            backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                                            border: '1px solid rgba(56, 189, 248, 0.3)',
-                                            color: '#38bdf8',
-                                            borderRadius: '6px',
-                                            fontSize: '12px',
-                                            cursor: 'pointer',
-                                            fontWeight: 600,
-                                          }}
-                                        >
-                                          📝 Báo Cáo Buổi Học
-                                        </button>
-                                      </div>
+                                        </div>
+                                      )
                                     )}
                                   </div>
                                 </td>
