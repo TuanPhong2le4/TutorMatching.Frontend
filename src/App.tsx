@@ -7,6 +7,9 @@ import { TutorCard } from './components/TutorCard';
 import { TutorDetailModal } from './components/TutorDetailModal';
 import { TutorSearchFilter } from './components/TutorSearchFilter';
 import { TutorProfileEditModal } from './components/TutorProfileEditModal';
+import { BookingModal } from './components/BookingModal';
+import { AvailabilityManager } from './components/AvailabilityManager';
+import { bookingService, BookingDto } from './services/bookingService';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -29,6 +32,23 @@ export default function App() {
 
   // Booking notification toast state
   const [bookingNotice, setBookingNotice] = useState<string | null>(null);
+
+  // Phase 3 Booking States
+  const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
+  const [bookingTutor, setBookingTutor] = useState<TutorSearchResult | null>(null);
+  const [bookings, setBookings] = useState<BookingDto[]>([]);
+  const [bookingsPage, setBookingsPage] = useState<number>(1);
+  const [bookingsTotalPages, setBookingsTotalPages] = useState<number>(1);
+  const [bookingsTotalCount, setBookingsTotalCount] = useState<number>(0);
+  const [bookingsLoading, setBookingsLoading] = useState<boolean>(false);
+  const [tutorSubTab, setTutorSubTab] = useState<'list' | 'availability'>('list');
+
+  // Booking confirm/cancel modals
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>('');
+  const [confirmBookingId, setConfirmBookingId] = useState<string | null>(null);
+  const [meetingLink, setMeetingLink] = useState<string>('');
+  const [submittingAction, setSubmittingAction] = useState<boolean>(false);
 
   const isTutorRole = Number(user?.role) === 1 || user?.role === 'Tutor';
 
@@ -82,9 +102,98 @@ export default function App() {
     setPageNumber(1);
   };
 
+  const fetchBookings = async () => {
+    try {
+      setBookingsLoading(true);
+      const res = await bookingService.getMyBookings(bookingsPage, 10);
+      setBookings(res.items || []);
+      setBookingsTotalCount(res.totalCount || 0);
+      setBookingsTotalPages(Math.ceil((res.totalCount || 0) / 10));
+    } catch (err) {
+      console.error('Failed to load bookings:', err);
+    } finally {
+      setBookingsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'bookings') {
+      fetchBookings();
+    }
+  }, [isAuthenticated, activeTab, bookingsPage]);
+
   const handleBookTutor = (tutor: TutorSearchResult) => {
-    setBookingNotice(`Đã chọn Gia Sư: ${tutor.fullName}. Chức năng Đặt Lịch Học (Phase 3) đã sẵn sàng!`);
+    setBookingTutor(tutor);
+    setIsBookingOpen(true);
+  };
+
+  const handleBookingSuccess = () => {
+    setIsBookingOpen(false);
+    setBookingTutor(null);
+    setBookingNotice('Đặt lịch học thành công! Vui lòng kiểm tra Lịch học của bạn.');
     setTimeout(() => setBookingNotice(null), 5000);
+    setBookingsPage(1);
+    setActiveTab('bookings');
+  };
+
+  const handleCancelBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancelBookingId || !cancelReason) return;
+    try {
+      setSubmittingAction(true);
+      await bookingService.cancelBooking(cancelBookingId, cancelReason);
+      setCancelBookingId(null);
+      setCancelReason('');
+      setBookingNotice('Đã hủy lịch học thành công.');
+      setTimeout(() => setBookingNotice(null), 5000);
+      fetchBookings();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể hủy lịch học. Vui lòng thử lại.');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleConfirmBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmBookingId || !meetingLink) return;
+    try {
+      setSubmittingAction(true);
+      await bookingService.confirmBooking(confirmBookingId, meetingLink);
+      setConfirmBookingId(null);
+      setMeetingLink('');
+      setBookingNotice('Đã xác nhận lớp học thành công.');
+      setTimeout(() => setBookingNotice(null), 5000);
+      fetchBookings();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể xác nhận lịch học. Vui lòng thử lại.');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleUpdateMeetingLink = async (bookingId: string, link: string) => {
+    if (!link) return;
+    try {
+      await bookingService.updateMeetingLink(bookingId, link);
+      setBookingNotice('Cập nhật link lớp học thành công.');
+      setTimeout(() => setBookingNotice(null), 5000);
+      fetchBookings();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể cập nhật link. Vui lòng thử lại.');
+    }
+  };
+
+  const handleCompleteBooking = async (bookingId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hoàn thành buổi học này và nhận tín chỉ?')) return;
+    try {
+      await bookingService.completeBooking(bookingId);
+      setBookingNotice('Đã hoàn thành buổi học.');
+      setTimeout(() => setBookingNotice(null), 5000);
+      fetchBookings();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Có lỗi xảy ra.');
+    }
   };
 
   // IF NOT AUTHENTICATED: Show Dedicated Standalone Auth Page (Login & Register)
@@ -369,11 +478,300 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab 3: Bookings Placeholder */}
+        {/* Tab 3: Bookings & Availability Management */}
         {activeTab === 'bookings' && (
-          <div className="glass-panel" style={{ padding: '32px', borderRadius: '16px' }}>
-            <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>🗓️ Quản Lý Lịch Học & Đặt Chỗ</h2>
-            <p style={{ color: '#4ade80' }}>Bạn đã đăng nhập với tài khoản <strong>{user?.fullName}</strong>. Chức năng Quản lý Lịch học & Đặt chỗ (Phase 3) đã sẵn sàng!</p>
+          <div>
+            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '4px' }}>
+                  🗓️ Quản Lý Lịch Học & Giảng Dạy
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '15px' }}>
+                  {isTutorRole ? 'Quản lý lịch dạy học và cấu hình khung giờ rảnh của bạn.' : 'Xem danh sách lớp học và trạng thái lịch học của bạn.'}
+                </p>
+              </div>
+
+              {isTutorRole && (
+                <div style={{ display: 'flex', gap: '8px', backgroundColor: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '10px' }}>
+                  <button
+                    onClick={() => setTutorSubTab('list')}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: tutorSubTab === 'list' ? '#38bdf8' : 'transparent',
+                      color: tutorSubTab === 'list' ? '#0f172a' : '#94a3b8',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    📋 Lịch Dạy Đã Đăng Ký
+                  </button>
+                  <button
+                    onClick={() => setTutorSubTab('availability')}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: tutorSubTab === 'availability' ? '#38bdf8' : 'transparent',
+                      color: tutorSubTab === 'availability' ? '#0f172a' : '#94a3b8',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    ⚙️ Cấu Hình Lịch Rảnh
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isTutorRole && tutorSubTab === 'availability' ? (
+              <AvailabilityManager />
+            ) : (
+              <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+                {bookingsLoading ? (
+                  <div style={{ color: '#94a3b8', textAlign: 'center', padding: '48px' }}>Đang tải lịch học của bạn...</div>
+                ) : bookings.length === 0 ? (
+                  <div style={{ color: '#94a3b8', textAlign: 'center', padding: '48px' }}>
+                    <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗓️</div>
+                    <h3 style={{ color: '#fff', fontSize: '18px', marginBottom: '8px' }}>Chưa Có Buổi Học Nào</h3>
+                    <p style={{ fontSize: '14px', maxWidth: '380px', margin: '0 auto' }}>
+                      {isTutorRole ? 'Hiện tại chưa có học sinh nào đặt lịch học với bạn.' : 'Bạn chưa đặt lịch học với gia sư nào. Hãy chuyển sang tab Tìm Gia Sư để bắt đầu học!'}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Bookings Table / List */}
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>MÔN HỌC</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>{isTutorRole ? 'HỌC VIÊN' : 'GIA SƯ'}</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>THỜI GIAN</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>CHI PHÍ</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>TRẠNG THÁI</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>LIÊN KẾT / THAO TÁC</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bookings.map((b) => {
+                            const start = new Date(b.scheduledStartAt);
+                            const end = new Date(b.scheduledEndAt);
+                            const formattedDate = start.toLocaleDateString('vi-VN');
+                            const formattedTime = `${start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+
+                            // Status badge config
+                            let statusText = 'Chờ duyệt';
+                            let statusStyle = { color: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.15)' };
+                            if (b.status === 1) {
+                              statusText = 'Đã xác nhận';
+                              statusStyle = { color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)' };
+                            } else if (b.status === 2) {
+                              statusText = 'Hoàn thành';
+                              statusStyle = { color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)' };
+                            } else if (b.status === 3) {
+                              statusText = 'Đã hủy';
+                              statusStyle = { color: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.15)' };
+                            } else if (b.status === 4) {
+                              statusText = 'Thay đổi lịch';
+                              statusStyle = { color: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.15)' };
+                            }
+
+                            return (
+                              <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '14px' }}>
+                                <td style={{ padding: '16px', fontWeight: 600, color: '#fff' }}>{b.subjectName}</td>
+                                <td style={{ padding: '16px' }}>{isTutorRole ? b.studentName : b.tutorName}</td>
+                                <td style={{ padding: '16px' }}>
+                                  <div>📅 {formattedDate}</div>
+                                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>⏰ {formattedTime}</div>
+                                </td>
+                                <td style={{ padding: '16px', fontWeight: 700, color: '#a855f7' }}>💎 {b.creditAmount}</td>
+                                <td style={{ padding: '16px' }}>
+                                  <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, ...statusStyle }}>
+                                    {statusText}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '16px' }}>
+                                  {/* Action Buttons based on Role & Status */}
+                                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                    {b.meetingLink && b.status === 1 && (
+                                      <a
+                                        href={b.meetingLink.startsWith('http') ? b.meetingLink : `https://${b.meetingLink}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                          padding: '6px 12px',
+                                          backgroundColor: '#38bdf8',
+                                          color: '#0f172a',
+                                          borderRadius: '6px',
+                                          fontSize: '12px',
+                                          fontWeight: 600,
+                                          textDecoration: 'none',
+                                        }}
+                                      >
+                                        🌐 Vào Lớp Học
+                                      </a>
+                                    )}
+
+                                    {/* Student Cancel Option */}
+                                    {!isTutorRole && (b.status === 0 || b.status === 1) && (
+                                      <button
+                                        onClick={() => setCancelBookingId(b.id)}
+                                        style={{
+                                          padding: '6px 12px',
+                                          backgroundColor: 'rgba(239,68,68,0.15)',
+                                          border: '1px solid rgba(239,68,68,0.3)',
+                                          color: '#f87171',
+                                          borderRadius: '6px',
+                                          fontSize: '12px',
+                                          cursor: 'pointer',
+                                        }}
+                                      >
+                                        ❌ Hủy Lịch
+                                      </button>
+                                    )}
+
+                                    {/* Tutor Actions */}
+                                    {isTutorRole && b.status === 0 && (
+                                      <>
+                                        <button
+                                          onClick={() => setConfirmBookingId(b.id)}
+                                          style={{
+                                            padding: '6px 12px',
+                                            backgroundColor: '#10b981',
+                                            border: 'none',
+                                            color: '#fff',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          ✔️ Xác Nhận
+                                        </button>
+                                        <button
+                                          onClick={() => setCancelBookingId(b.id)}
+                                          style={{
+                                            padding: '6px 12px',
+                                            backgroundColor: 'rgba(239,68,68,0.15)',
+                                            border: '1px solid rgba(239,68,68,0.3)',
+                                            color: '#f87171',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          ❌ Từ Chối
+                                        </button>
+                                      </>
+                                    )}
+
+                                    {isTutorRole && b.status === 1 && (
+                                      <>
+                                        <button
+                                          onClick={() => handleCompleteBooking(b.id)}
+                                          style={{
+                                            padding: '6px 12px',
+                                            backgroundColor: '#a855f7',
+                                            border: 'none',
+                                            color: '#fff',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          🎓 Hoàn Thành
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            const newLink = prompt('Nhập link meeting mới:', b.meetingLink || '');
+                                            if (newLink !== null) handleUpdateMeetingLink(b.id, newLink);
+                                          }}
+                                          style={{
+                                            padding: '6px 12px',
+                                            backgroundColor: 'transparent',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            color: '#cbd5e1',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          🔗 Đổi Link
+                                        </button>
+                                        <button
+                                          onClick={() => setCancelBookingId(b.id)}
+                                          style={{
+                                            padding: '6px 12px',
+                                            backgroundColor: 'rgba(239,68,68,0.15)',
+                                            border: '1px solid rgba(239,68,68,0.3)',
+                                            color: '#f87171',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          ❌ Hủy Lịch
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Bookings Pagination */}
+                    {bookingsTotalPages > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
+                        <button
+                          disabled={bookingsPage === 1}
+                          onClick={() => setBookingsPage(prev => Math.max(prev - 1, 1))}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(255,255,255,0.15)',
+                            backgroundColor: 'rgba(15,23,42,0.6)',
+                            color: bookingsPage === 1 ? '#64748b' : '#fff',
+                            cursor: bookingsPage === 1 ? 'not-allowed' : 'pointer',
+                            fontSize: '13px',
+                          }}
+                        >
+                          Trước
+                        </button>
+                        <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13px', color: '#94a3b8' }}>
+                          Trang {bookingsPage} / {bookingsTotalPages}
+                        </span>
+                        <button
+                          disabled={bookingsPage === bookingsTotalPages}
+                          onClick={() => setBookingsPage(prev => Math.min(prev + 1, bookingsTotalPages))}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(255,255,255,0.15)',
+                            backgroundColor: 'rgba(15,23,42,0.6)',
+                            color: bookingsPage === bookingsTotalPages ? '#64748b' : '#fff',
+                            cursor: bookingsPage === bookingsTotalPages ? 'not-allowed' : 'pointer',
+                            fontSize: '13px',
+                          }}
+                        >
+                          Sau
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -387,6 +785,185 @@ export default function App() {
         onClose={() => setIsProfileEditOpen(false)}
         onProfileSaved={fetchTutors}
       />
+
+      {/* Booking Modal (Phase 3) */}
+      <BookingModal
+        tutor={bookingTutor}
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        onBookingSuccess={handleBookingSuccess}
+      />
+
+      {/* Cancel Booking Reason Prompt Modal */}
+      {cancelBookingId && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15,23,42,0.8)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1300,
+            padding: '16px',
+          }}
+          onClick={() => setCancelBookingId(null)}
+        >
+          <div
+            className="glass-panel"
+            style={{ width: '100%', maxWidth: '400px', padding: '24px', borderRadius: '16px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>❌ Hủy Lịch Học</h3>
+            <form onSubmit={handleCancelBooking}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '8px' }}>
+                Nhập lý do hủy lịch học (bắt buộc):
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                required
+                rows={3}
+                placeholder="Ví dụ: Bận đột xuất..."
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  backgroundColor: '#0f172a',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  outline: 'none',
+                  fontSize: '14px',
+                  resize: 'none',
+                  marginBottom: '16px',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setCancelBookingId(null)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    backgroundColor: 'transparent',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                  }}
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingAction}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#f87171',
+                    color: '#0f172a',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                  }}
+                >
+                  {submittingAction ? 'Đang xử lý...' : 'Xác Nhận Hủy'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Booking meetingLink Prompt Modal */}
+      {confirmBookingId && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15,23,42,0.8)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1300,
+            padding: '16px',
+          }}
+          onClick={() => setConfirmBookingId(null)}
+        >
+          <div
+            className="glass-panel"
+            style={{ width: '100%', maxWidth: '440px', padding: '24px', borderRadius: '16px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>✔️ Xác Nhận Buổi Dạy</h3>
+            <form onSubmit={handleConfirmBooking}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '8px' }}>
+                Nhập link lớp học (Google Meet, Zoom, Skype, v.v.):
+              </label>
+              <input
+                type="text"
+                value={meetingLink}
+                onChange={(e) => setMeetingLink(e.target.value)}
+                required
+                placeholder="meet.google.com/abc-xyz-123"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  backgroundColor: '#0f172a',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  outline: 'none',
+                  fontSize: '14px',
+                  marginBottom: '16px',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setConfirmBookingId(null)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    backgroundColor: 'transparent',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                  }}
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingAction}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#10b981',
+                    color: '#fff',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                  }}
+                >
+                  {submittingAction ? 'Đang xử lý...' : 'Xác Nhận Dạy'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
