@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { reviewService } from '../services/reviewService';
+import { useAuth } from '../context/AuthContext';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   subjectName,
   onReviewSuccess,
 }) => {
+  const { user } = useAuth();
   const [rating, setRating] = useState<number>(5);
   const [comment, setComment] = useState<string>('');
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
@@ -25,6 +27,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const isTutor = Number(user?.role) === 1 || user?.role === 'Tutor';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +79,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h3 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }} className="gradient-text">
-            ✍️ Đánh Giá Gia Sư
+            {isTutor ? '✍️ Đánh Giá Học Viên' : '✍️ Đánh Giá Gia Sư'}
           </h3>
           <button
             onClick={onClose}
@@ -93,7 +97,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
         {tutorName && (
           <div style={{ marginBottom: '20px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <span style={{ fontSize: '13px', color: '#94a3b8', display: 'block' }}>Buổi học với Gia sư:</span>
+            <span style={{ fontSize: '13px', color: '#94a3b8', display: 'block' }}>
+              {isTutor ? 'Đánh giá Học viên:' : 'Buổi học với Gia sư:'}
+            </span>
             <strong style={{ fontSize: '15px', color: '#fff' }}>{tutorName}</strong>
             {subjectName && (
               <span style={{ fontSize: '13px', color: '#38bdf8', marginLeft: '8px' }}>
@@ -113,7 +119,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           {/* Star selector */}
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <label style={{ display: 'block', fontSize: '14px', color: '#94a3b8', marginBottom: '12px', fontWeight: 600 }}>
-              Chọn mức độ hài lòng của bạn:
+              {isTutor ? 'Chọn mức độ đánh giá học viên:' : 'Chọn mức độ hài lòng của bạn:'}
             </label>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
               {[1, 2, 3, 4, 5].map((star) => {
@@ -141,11 +147,23 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               })}
             </div>
             <span style={{ display: 'block', fontSize: '13px', color: '#38bdf8', marginTop: '8px', fontWeight: 600 }}>
-              {rating === 1 && '😞 Rất không hài lòng'}
-              {rating === 2 && '🙁 Không hài lòng'}
-              {rating === 3 && '😐 Bình thường'}
-              {rating === 4 && '🙂 Hài lòng'}
-              {rating === 5 && '😍 Rất hài lòng'}
+              {isTutor ? (
+                <>
+                  {rating === 1 && '😞 Rất kém'}
+                  {rating === 2 && '🙁 Kém'}
+                  {rating === 3 && '😐 Trung bình'}
+                  {rating === 4 && '🙂 Khá'}
+                  {rating === 5 && '😍 Xuất sắc'}
+                </>
+              ) : (
+                <>
+                  {rating === 1 && '😞 Rất không hài lòng'}
+                  {rating === 2 && '🙁 Không hài lòng'}
+                  {rating === 3 && '😐 Bình thường'}
+                  {rating === 4 && '🙂 Hài lòng'}
+                  {rating === 5 && '😍 Rất hài lòng'}
+                </>
+              )}
             </span>
           </div>
 
@@ -158,7 +176,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}
-              placeholder="Chia sẻ trải nghiệm học tập của bạn cùng gia sư này để giúp các học viên khác lựa chọn..."
+              placeholder={isTutor ? "Nhận xét thái độ, ý thức học tập và sự tiếp thu kiến thức của học viên trong buổi học..." : "Chia sẻ trải nghiệm học tập của bạn cùng gia sư này để giúp các học viên khác lựa chọn..."}
               style={{
                 width: '100%',
                 backgroundColor: 'rgba(15, 23, 42, 0.6)',
@@ -183,13 +201,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 borderRadius: '12px',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 backgroundColor: 'transparent',
-                color: '#94a3b8',
+                color: '#cbd5e1',
                 cursor: 'pointer',
                 fontWeight: 600,
                 fontSize: '14px',
+                transition: 'background-color 0.2s',
               }}
             >
-              Hủy bỏ
+              Hủy
             </button>
             <button
               type="submit"
@@ -199,12 +218,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 flex: 2,
                 padding: '12px',
                 borderRadius: '12px',
-                cursor: 'pointer',
-                fontWeight: 600,
+                border: 'none',
+                fontWeight: 700,
                 fontSize: '14px',
+                cursor: submitting ? 'not-allowed' : 'pointer',
               }}
             >
-              {submitting ? 'Đang gửi đánh giá...' : 'Gửi Đánh Giá'}
+              {submitting ? 'Đang gửi...' : 'Gửi Đánh Giá'}
             </button>
           </div>
         </form>

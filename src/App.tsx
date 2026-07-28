@@ -15,10 +15,11 @@ import { creditService } from './services/creditService';
 import { ReviewModal } from './components/ReviewModal';
 import { SessionRecordModal } from './components/SessionRecordModal';
 import { LearningProgressDashboard } from './components/LearningProgressDashboard';
+import { AdminReviewsDashboard } from './components/AdminReviewsDashboard';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews'>('home');
 
   // Phase 4 Wallet State
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -282,6 +283,13 @@ export default function App() {
             style={{ background: 'none', border: 'none', color: activeTab === 'wallet' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
             {Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Duyệt Nạp Tiền' : '💎 Ví Tín Dụng'}
           </button>
+          {(Number(user?.role) === 0 || user?.role === 'Admin') && (
+            <button 
+              onClick={() => setActiveTab('admin-reviews')}
+              style={{ background: 'none', border: 'none', color: activeTab === 'admin-reviews' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
+              👑 Quản Lý Đánh Giá
+            </button>
+          )}
           {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
             <button 
               onClick={() => setActiveTab('progress')}
@@ -657,7 +665,30 @@ export default function App() {
 
                             return (
                               <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '14px' }}>
-                                <td style={{ padding: '16px', fontWeight: 600, color: '#fff' }}>{b.subjectName}</td>
+                                <td style={{ padding: '16px', fontWeight: 600, color: '#fff' }}>
+                                  <div>{b.subjectName}</div>
+                                  {b.status === 2 && (
+                                    <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontWeight: 'normal' }}>
+                                      {/* Student Review of Tutor */}
+                                      {b.isStudentReviewed && (
+                                        <div style={{ padding: '6px 10px', borderRadius: '8px', backgroundColor: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.15)', fontSize: '11px', maxWidth: '320px' }}>
+                                          <span style={{ fontWeight: 600, color: '#38bdf8' }}>🎓 Học viên đánh giá:</span>{' '}
+                                          <span style={{ color: '#fbbf24' }}>{'★'.repeat(b.studentRating || 5)}</span>
+                                          <div style={{ color: '#cbd5e1', fontStyle: 'italic', marginTop: '2px' }}>"{b.studentComment || 'Không có nhận xét viết tay'}"</div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Tutor Review of Student */}
+                                      {b.isTutorReviewed && (
+                                        <div style={{ padding: '6px 10px', borderRadius: '8px', backgroundColor: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.15)', fontSize: '11px', maxWidth: '320px' }}>
+                                          <span style={{ fontWeight: 600, color: '#c084fc' }}>👨‍🏫 Gia sư đánh giá:</span>{' '}
+                                          <span style={{ color: '#fbbf24' }}>{'★'.repeat(b.tutorRating || 5)}</span>
+                                          <div style={{ color: '#cbd5e1', fontStyle: 'italic', marginTop: '2px' }}>"{b.tutorComment || 'Không có nhận xét viết tay'}"</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
                                 <td style={{ padding: '16px' }}>{isTutorRole ? b.studentName : b.tutorName}</td>
                                 <td style={{ padding: '16px' }}>
                                   <div>📅 {formattedDate}</div>
@@ -823,9 +854,30 @@ export default function App() {
                                     )}
 
                                     {isTutorRole && b.status === 2 && (
-                                      b.isTutorReviewed ? (
-                                        <span style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 600 }}>✓ Đã báo cáo</span>
-                                      ) : (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {b.isTutorReviewed ? (
+                                          <span style={{ fontSize: '13px', color: '#c084fc', fontWeight: 600 }}>✓ Đã đánh giá học viên</span>
+                                        ) : (
+                                          <button
+                                            onClick={() => {
+                                              setReviewBookingId(b.id);
+                                              setReviewTutorName(b.studentName);
+                                              setReviewSubjectName(b.subjectName);
+                                            }}
+                                            style={{
+                                              padding: '6px 12px',
+                                              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                                              border: '1px solid rgba(168, 85, 247, 0.3)',
+                                              color: '#c084fc',
+                                              borderRadius: '6px',
+                                              fontSize: '12px',
+                                              cursor: 'pointer',
+                                              fontWeight: 600,
+                                            }}
+                                          >
+                                            ✍️ Đánh Giá Học Viên
+                                          </button>
+                                        )}
                                         <button
                                           onClick={() => {
                                             setSessionRecordBookingId(b.id);
@@ -845,7 +897,7 @@ export default function App() {
                                         >
                                           📝 Báo Cáo Buổi Học
                                         </button>
-                                      )
+                                      </div>
                                     )}
                                   </div>
                                 </td>
@@ -909,6 +961,11 @@ export default function App() {
         {/* Tab 5: Learning Progress Dashboard */}
         {activeTab === 'progress' && (
           <LearningProgressDashboard />
+        )}
+
+        {/* Tab 6: Admin Reviews Dashboard */}
+        {activeTab === 'admin-reviews' && (
+          <AdminReviewsDashboard />
         )}
       </main>
 

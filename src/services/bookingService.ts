@@ -15,6 +15,10 @@ export interface BookingDto {
   subjectName: string;
   isStudentReviewed?: boolean;
   isTutorReviewed?: boolean;
+  studentRating?: number;
+  studentComment?: string;
+  tutorRating?: number;
+  tutorComment?: string;
 }
 
 export interface PagedBookingResult {

@@ -14,6 +14,17 @@ export interface ReviewDto {
   createdAt: string;
 }
 
+export interface AdminReviewDto {
+  id: string;
+  reviewerName: string;
+  revieweeName: string;
+  subjectName: string;
+  rating: number;
+  comment?: string;
+  reviewType: number; // 0 = StudentToTutor, 1 = TutorToStudent
+  createdAt: string;
+}
+
 export interface PagedResult<T> {
   items: T[];
   totalCount: number;
@@ -38,6 +49,14 @@ export const reviewService = {
 
   async deleteReview(id: string): Promise<boolean> {
     const res = await api.delete<{ data: boolean }>(`/Reviews/${id}`);
+    return res.data.data;
+  },
+
+  // Admin reviews management
+  async getAllReviews(pageNumber = 1, pageSize = 20, search?: string, reviewType?: number, rating?: number): Promise<PagedResult<AdminReviewDto>> {
+    const res = await api.get<{ data: PagedResult<AdminReviewDto> }>('/Admin/reviews', {
+      params: { pageNumber, pageSize, search, reviewType, rating }
+    });
     return res.data.data;
   }
 };
