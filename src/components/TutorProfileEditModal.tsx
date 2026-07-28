@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { profileService, SubjectExperienceDto } from '../services/profileService';
 import { tutorService } from '../services/tutorService';
 import { Subject } from '../types/tutor';
+import { AvailabilityManager } from './AvailabilityManager';
 
 interface TutorProfileEditModalProps {
   isOpen: boolean;
@@ -517,6 +518,18 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
             </div>
           </form>
         )}
+
+        <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '32px 0' }} />
+        
+        <div style={{ padding: '0 4px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            📅 Cấu Hình Lịch Rảnh Giảng Dạy
+          </h3>
+          <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '16px' }}>
+            Thiết lập các khung giờ rảnh hàng tuần hoặc theo ngày cụ thể để học sinh có thể nhìn thấy và chọn giờ học.
+          </p>
+          <AvailabilityManager />
+        </div>
       </div>
     </div>
   );

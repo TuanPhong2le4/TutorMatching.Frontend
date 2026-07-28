@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TutorSearchResult } from '../types/tutor';
+import { availabilityService, AvailabilityDto } from '../services/availabilityService';
 
 interface TutorDetailModalProps {
   tutor: TutorSearchResult | null;
@@ -8,6 +9,16 @@ interface TutorDetailModalProps {
 }
 
 export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClose, onBook }) => {
+  const [availabilities, setAvailabilities] = useState<AvailabilityDto[]>([]);
+
+  useEffect(() => {
+    if (tutor?.tutorId) {
+      availabilityService.getAvailabilities(tutor.tutorId)
+        .then(data => setAvailabilities(data || []))
+        .catch(err => console.error('Failed to load availabilities', err));
+    }
+  }, [tutor]);
+
   if (!tutor) return null;
 
   const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(tutor.fullName)}&background=0D8ABC&color=fff&size=128`;
@@ -140,12 +151,35 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClo
 
         {/* Schedule Overview Info */}
         <div style={{ marginBottom: '28px', backgroundColor: 'rgba(56, 189, 248, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-          <div style={{ fontWeight: '600', color: '#38bdf8', fontSize: '14px', marginBottom: '4px' }}>
-            📅 Lịch Rảnh Linh Hoạt
+          <div style={{ fontWeight: '600', color: '#38bdf8', fontSize: '14px', marginBottom: '8px' }}>
+            📅 Khung Giờ Rảnh Của Gia Sư
           </div>
-          <div style={{ fontSize: '13px', color: '#cbd5e1' }}>
-            Gia sư sẵn sàng xếp lịch giảng dạy vào các buổi Sáng / Chiều / Tối các ngày trong tuần.
-          </div>
+          {availabilities.length === 0 ? (
+            <div style={{ fontSize: '13px', color: '#cbd5e1' }}>Gia sư này chưa đăng ký khung giờ rảnh nào.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '140px', overflowY: 'auto' }}>
+              {availabilities.map((av) => (
+                <div key={av.id} style={{ fontSize: '13px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>•</span>
+                  {av.isRecurring ? (
+                    <span>
+                      Thứ {av.dayOfWeek === 0 ? 'Chủ Nhật' : av.dayOfWeek === 6 ? 'Bảy' : (av.dayOfWeek! + 1)}:
+                      <strong style={{ color: '#38bdf8', marginLeft: '4px' }}>
+                        {av.startTime.substring(0, 5)} - {av.endTime.substring(0, 5)}
+                      </strong> (Hàng tuần)
+                    </span>
+                  ) : (
+                    <span>
+                      Ngày {av.specificDate ? new Date(av.specificDate).toLocaleDateString('vi-VN') : ''}:
+                      <strong style={{ color: '#38bdf8', marginLeft: '4px' }}>
+                        {av.startTime.substring(0, 5)} - {av.endTime.substring(0, 5)}
+                      </strong> (Một lần)
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Modal Actions */}
