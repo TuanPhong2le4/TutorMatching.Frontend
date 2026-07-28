@@ -2,15 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { availabilityService, AvailabilityDto, UpdateAvailabilityRequestItem } from '../services/availabilityService';
 
-const timeOptions = (() => {
-  const options = [];
-  for (let i = 0; i < 24; i++) {
-    const hour = i.toString().padStart(2, '0');
-    options.push(`${hour}:00`);
-    options.push(`${hour}:30`);
+export const isValid24hTime = (timeStr: string): boolean => {
+  return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr);
+};
+
+export const formatTimeOnBlur = (val: string, setter: (v: string) => void) => {
+  const trimmed = val.trim();
+  const singleHourRegex = /^([0-9]):([0-5][0-9])$/;
+  if (singleHourRegex.test(trimmed)) {
+    setter(trimmed.padStart(5, '0'));
+    return;
   }
-  return options;
-})();
+  if (/^[0-9]$/.test(trimmed)) {
+    setter(`0${trimmed}:00`);
+    return;
+  }
+  if (/^[1-2][0-9]$/.test(trimmed)) {
+    const num = parseInt(trimmed, 10);
+    if (num >= 0 && num <= 23) {
+      setter(`${trimmed}:00`);
+    }
+    return;
+  }
+};
 
 export const AvailabilityManager: React.FC = () => {
   const { user } = useAuth();
@@ -50,6 +64,11 @@ export const AvailabilityManager: React.FC = () => {
   const handleAddSlot = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+
+    if (!isValid24hTime(startTime) || !isValid24hTime(endTime)) {
+      setErrorMsg('Giờ phải đúng định dạng 24h HH:mm (ví dụ: 09:15, 14:30).');
+      return;
+    }
 
     if (startTime >= endTime) {
       setErrorMsg('Thời gian bắt đầu phải trước thời gian kết thúc.');
@@ -211,10 +230,13 @@ export const AvailabilityManager: React.FC = () => {
           {/* Time Picker Inputs */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Bắt Đầu:</label>
-              <select
+              <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Bắt Đầu (định dạng 24h):</label>
+              <input
+                type="text"
+                placeholder="HH:mm (ví dụ: 09:15)"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
+                onBlur={() => formatTimeOnBlur(startTime, setStartTime)}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -225,17 +247,16 @@ export const AvailabilityManager: React.FC = () => {
                   fontSize: '14px',
                   outline: 'none',
                 }}
-              >
-                {timeOptions.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+              />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Kết Thúc:</label>
-              <select
+              <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Kết Thúc (định dạng 24h):</label>
+              <input
+                type="text"
+                placeholder="HH:mm (ví dụ: 12:45)"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                onBlur={() => formatTimeOnBlur(endTime, setEndTime)}
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -246,11 +267,7 @@ export const AvailabilityManager: React.FC = () => {
                   fontSize: '14px',
                   outline: 'none',
                 }}
-              >
-                {timeOptions.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 

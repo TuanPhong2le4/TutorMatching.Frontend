@@ -11,15 +11,29 @@ interface BookingModalProps {
   onBookingSuccess: () => void;
 }
 
-const timeOptions = (() => {
-  const options = [];
-  for (let i = 0; i < 24; i++) {
-    const hour = i.toString().padStart(2, '0');
-    options.push(`${hour}:00`);
-    options.push(`${hour}:30`);
+export const isValid24hTime = (timeStr: string): boolean => {
+  return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr);
+};
+
+export const formatTimeOnBlur = (val: string, setter: (v: string) => void) => {
+  const trimmed = val.trim();
+  const singleHourRegex = /^([0-9]):([0-5][0-9])$/;
+  if (singleHourRegex.test(trimmed)) {
+    setter(trimmed.padStart(5, '0'));
+    return;
   }
-  return options;
-})();
+  if (/^[0-9]$/.test(trimmed)) {
+    setter(`0${trimmed}:00`);
+    return;
+  }
+  if (/^[1-2][0-9]$/.test(trimmed)) {
+    const num = parseInt(trimmed, 10);
+    if (num >= 0 && num <= 23) {
+      setter(`${trimmed}:00`);
+    }
+    return;
+  }
+};
 
 export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClose, onBookingSuccess }) => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
@@ -76,6 +90,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
   // Check if student selected date is inside tutor's availability slots
   const checkTimeInAvailability = (): { isValid: boolean; reason?: string } => {
     if (!bookingDate) return { isValid: false, reason: 'Vui lòng chọn ngày học.' };
+    if (!isValid24hTime(startTime) || !isValid24hTime(endTime)) {
+      return { isValid: false, reason: 'Giờ học phải đúng định dạng 24h HH:mm (ví dụ: 09:15, 14:30).' };
+    }
     if (duration <= 0) return { isValid: false, reason: 'Giờ kết thúc phải sau giờ bắt đầu.' };
 
     const selectedDate = new Date(bookingDate);
@@ -239,10 +256,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
             {/* Time slot picker inputs */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Từ:</label>
-                <select
+                <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Từ (định dạng 24h):</label>
+                <input
+                  type="text"
+                  placeholder="HH:mm (ví dụ: 09:15)"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
+                  onBlur={() => formatTimeOnBlur(startTime, setStartTime)}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -253,17 +273,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
                     fontSize: '14px',
                     outline: 'none',
                   }}
-                >
-                  {timeOptions.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Đến:</label>
-                <select
+                <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Đến (định dạng 24h):</label>
+                <input
+                  type="text"
+                  placeholder="HH:mm (ví dụ: 10:45)"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
+                  onBlur={() => formatTimeOnBlur(endTime, setEndTime)}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -274,11 +293,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
                     fontSize: '14px',
                     outline: 'none',
                   }}
-                >
-                  {timeOptions.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
