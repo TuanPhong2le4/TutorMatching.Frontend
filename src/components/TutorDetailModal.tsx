@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TutorSearchResult } from '../types/tutor';
 import { availabilityService, AvailabilityDto } from '../services/availabilityService';
+import { reviewService, ReviewDto } from '../services/reviewService';
 
 interface TutorDetailModalProps {
   tutor: TutorSearchResult | null;
@@ -10,12 +11,20 @@ interface TutorDetailModalProps {
 
 export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClose, onBook }) => {
   const [availabilities, setAvailabilities] = useState<AvailabilityDto[]>([]);
+  const [reviews, setReviews] = useState<ReviewDto[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (tutor?.tutorId) {
       availabilityService.getAvailabilities(tutor.tutorId)
         .then(data => setAvailabilities(data || []))
         .catch(err => console.error('Failed to load availabilities', err));
+
+      setReviewsLoading(true);
+      reviewService.getReviews(tutor.tutorId, 1, 20)
+        .then(data => setReviews(data.items || []))
+        .catch(err => console.error('Failed to load reviews', err))
+        .finally(() => setReviewsLoading(false));
     }
   }, [tutor]);
 
@@ -176,6 +185,54 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClo
                       </strong> (Một lần)
                     </span>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Student Reviews Section */}
+        <div style={{ marginBottom: '28px' }}>
+          <h4 style={{ fontSize: '16px', color: '#e2e8f0', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            💬 Đánh Giá Từ Học Viên
+          </h4>
+          {reviewsLoading ? (
+            <div style={{ fontSize: '13px', color: '#94a3b8' }}>Đang tải đánh giá...</div>
+          ) : reviews.length === 0 ? (
+            <div style={{ fontSize: '13px', color: '#cbd5e1', fontStyle: 'italic', backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px' }}>
+              Chưa có đánh giá nào cho gia sư này.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto' }}>
+              {reviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <div style={{ fontWeight: 600, color: '#fff', fontSize: '13px' }}>
+                      {rev.reviewerName}
+                      <span style={{ color: '#38bdf8', fontSize: '11px', marginLeft: '6px', fontWeight: 'normal' }}>
+                        ({rev.subjectName})
+                      </span>
+                    </div>
+                    <span style={{ color: '#fbbf24', fontSize: '12px', fontWeight: 'bold' }}>
+                      {'⭐'.repeat(rev.rating)}
+                    </span>
+                  </div>
+                  {rev.comment && (
+                    <p style={{ fontSize: '13px', color: '#cbd5e1', margin: '4px 0 0', lineHeight: 1.4 }}>
+                      {rev.comment}
+                    </p>
+                  )}
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', textAlign: 'right' }}>
+                    {new Date(rev.createdAt).toLocaleDateString('vi-VN')}
+                  </div>
                 </div>
               ))}
             </div>

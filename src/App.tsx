@@ -12,10 +12,13 @@ import { AvailabilityManager } from './components/AvailabilityManager';
 import { bookingService, BookingDto } from './services/bookingService';
 import { WalletDashboard } from './components/WalletDashboard';
 import { creditService } from './services/creditService';
+import { ReviewModal } from './components/ReviewModal';
+import { SessionRecordModal } from './components/SessionRecordModal';
+import { LearningProgressDashboard } from './components/LearningProgressDashboard';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress'>('home');
 
   // Phase 4 Wallet State
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -47,6 +50,15 @@ export default function App() {
   const [bookingsTotalCount, setBookingsTotalCount] = useState<number>(0);
   const [bookingsLoading, setBookingsLoading] = useState<boolean>(false);
   const [tutorSubTab, setTutorSubTab] = useState<'list' | 'availability'>('list');
+
+  // Phase 5 Modals States
+  const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
+  const [reviewTutorName, setReviewTutorName] = useState<string>('');
+  const [reviewSubjectName, setReviewSubjectName] = useState<string>('');
+
+  const [sessionRecordBookingId, setSessionRecordBookingId] = useState<string | null>(null);
+  const [sessionStudentName, setSessionStudentName] = useState<string>('');
+  const [sessionSubjectName, setSessionSubjectName] = useState<string>('');
 
   // Booking confirm/cancel modals
   const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
@@ -270,6 +282,13 @@ export default function App() {
             style={{ background: 'none', border: 'none', color: activeTab === 'wallet' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
             {Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Duyệt Nạp Tiền' : '💎 Ví Tín Dụng'}
           </button>
+          {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
+            <button 
+              onClick={() => setActiveTab('progress')}
+              style={{ background: 'none', border: 'none', color: activeTab === 'progress' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
+              🎯 Tiến Độ Học
+            </button>
+          )}
         </nav>
 
         {/* User Profile & Logout */}
@@ -775,6 +794,51 @@ export default function App() {
                                         </button>
                                       </>
                                     )}
+
+                                    {/* Actions for completed bookings */}
+                                    {!isTutorRole && b.status === 2 && (
+                                      <button
+                                        onClick={() => {
+                                          setReviewBookingId(b.id);
+                                          setReviewTutorName(b.tutorName);
+                                          setReviewSubjectName(b.subjectName);
+                                        }}
+                                        style={{
+                                          padding: '6px 12px',
+                                          backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                                          border: '1px solid rgba(52, 211, 153, 0.3)',
+                                          color: '#34d399',
+                                          borderRadius: '6px',
+                                          fontSize: '12px',
+                                          cursor: 'pointer',
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        ✍️ Viết Đánh Giá
+                                      </button>
+                                    )}
+
+                                    {isTutorRole && b.status === 2 && (
+                                      <button
+                                        onClick={() => {
+                                          setSessionRecordBookingId(b.id);
+                                          setSessionStudentName(b.studentName);
+                                          setSessionSubjectName(b.subjectName);
+                                        }}
+                                        style={{
+                                          padding: '6px 12px',
+                                          backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                                          color: '#38bdf8',
+                                          borderRadius: '6px',
+                                          fontSize: '12px',
+                                          cursor: 'pointer',
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        📝 Báo Cáo Buổi Học
+                                      </button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
@@ -832,6 +896,11 @@ export default function App() {
         {/* Tab 4: Wallet Dashboard */}
         {activeTab === 'wallet' && (
           <WalletDashboard balance={walletBalance} onBalanceChanged={setWalletBalance} />
+        )}
+
+        {/* Tab 5: Learning Progress Dashboard */}
+        {activeTab === 'progress' && (
+          <LearningProgressDashboard />
         )}
       </main>
 
@@ -1023,6 +1092,26 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Review Modal (Phase 5) */}
+      <ReviewModal
+        isOpen={reviewBookingId !== null}
+        onClose={() => setReviewBookingId(null)}
+        bookingId={reviewBookingId || ''}
+        tutorName={reviewTutorName}
+        subjectName={reviewSubjectName}
+        onReviewSuccess={fetchBookings}
+      />
+
+      {/* Session Record Modal (Phase 5) */}
+      <SessionRecordModal
+        isOpen={sessionRecordBookingId !== null}
+        onClose={() => setSessionRecordBookingId(null)}
+        bookingId={sessionRecordBookingId || ''}
+        studentName={sessionStudentName}
+        subjectName={sessionSubjectName}
+        onSuccess={fetchBookings}
+      />
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
