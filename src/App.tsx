@@ -797,47 +797,55 @@ export default function App() {
 
                                     {/* Actions for completed bookings */}
                                     {!isTutorRole && b.status === 2 && (
-                                      <button
-                                        onClick={() => {
-                                          setReviewBookingId(b.id);
-                                          setReviewTutorName(b.tutorName);
-                                          setReviewSubjectName(b.subjectName);
-                                        }}
-                                        style={{
-                                          padding: '6px 12px',
-                                          backgroundColor: 'rgba(52, 211, 153, 0.15)',
-                                          border: '1px solid rgba(52, 211, 153, 0.3)',
-                                          color: '#34d399',
-                                          borderRadius: '6px',
-                                          fontSize: '12px',
-                                          cursor: 'pointer',
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        ✍️ Viết Đánh Giá
-                                      </button>
+                                      b.isStudentReviewed ? (
+                                        <span style={{ fontSize: '13px', color: '#34d399', fontWeight: 600 }}>✓ Đã đánh giá</span>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            setReviewBookingId(b.id);
+                                            setReviewTutorName(b.tutorName);
+                                            setReviewSubjectName(b.subjectName);
+                                          }}
+                                          style={{
+                                            padding: '6px 12px',
+                                            backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                                            border: '1px solid rgba(52, 211, 153, 0.3)',
+                                            color: '#34d399',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            cursor: 'pointer',
+                                            fontWeight: 600,
+                                          }}
+                                        >
+                                          ✍️ Viết Đánh Giá
+                                        </button>
+                                      )
                                     )}
 
                                     {isTutorRole && b.status === 2 && (
-                                      <button
-                                        onClick={() => {
-                                          setSessionRecordBookingId(b.id);
-                                          setSessionStudentName(b.studentName);
-                                          setSessionSubjectName(b.subjectName);
-                                        }}
-                                        style={{
-                                          padding: '6px 12px',
-                                          backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                                          border: '1px solid rgba(56, 189, 248, 0.3)',
-                                          color: '#38bdf8',
-                                          borderRadius: '6px',
-                                          fontSize: '12px',
-                                          cursor: 'pointer',
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        📝 Báo Cáo Buổi Học
-                                      </button>
+                                      b.isTutorReviewed ? (
+                                        <span style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 600 }}>✓ Đã báo cáo</span>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            setSessionRecordBookingId(b.id);
+                                            setSessionStudentName(b.studentName);
+                                            setSessionSubjectName(b.subjectName);
+                                          }}
+                                          style={{
+                                            padding: '6px 12px',
+                                            backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                                            color: '#38bdf8',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            cursor: 'pointer',
+                                            fontWeight: 600,
+                                          }}
+                                        >
+                                          📝 Báo Cáo Buổi Học
+                                        </button>
+                                      )
                                     )}
                                   </div>
                                 </td>

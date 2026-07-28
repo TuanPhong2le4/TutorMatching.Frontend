@@ -13,6 +13,8 @@ export interface BookingDto {
   studentName: string;
   tutorName: string;
   subjectName: string;
+  isStudentReviewed?: boolean;
+  isTutorReviewed?: boolean;
 }
 
 export interface PagedBookingResult {
