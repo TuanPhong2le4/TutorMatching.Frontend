@@ -20,12 +20,27 @@ import { AdminReviewsDashboard } from './components/AdminReviewsDashboard';
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews'>('home');
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState<boolean>(false);
 
   const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews') => {
     setActiveTab(tab);
-    const path = tab === 'home' ? '/' : `/${tab}`;
+    const path = `/${tab}`;
     if (window.location.pathname !== path) {
       window.history.pushState(null, '', path);
+    }
+  };
+
+  const handleOpenProfileEdit = (open: boolean) => {
+    setIsProfileEditOpen(open);
+    if (open) {
+      if (window.location.pathname !== '/profile') {
+        window.history.pushState(null, '', '/profile');
+      }
+    } else {
+      const path = `/${activeTab}`;
+      if (window.location.pathname !== path) {
+        window.history.pushState(null, '', path);
+      }
     }
   };
 
@@ -33,15 +48,19 @@ export default function App() {
     if (!isAuthenticated) return;
     const handleLocation = () => {
       const path = window.location.pathname;
-      if (path === '/tutors') setActiveTab('tutors');
-      else if (path === '/bookings') setActiveTab('bookings');
-      else if (path === '/wallet') setActiveTab('wallet');
-      else if (path === '/progress') setActiveTab('progress');
-      else if (path === '/admin-reviews') setActiveTab('admin-reviews');
-      else {
-        setActiveTab('home');
-        if (path !== '/') {
-          window.history.replaceState(null, '', '/');
+      if (path === '/profile') {
+        setIsProfileEditOpen(true);
+      } else {
+        setIsProfileEditOpen(false);
+        if (path === '/tutors') setActiveTab('tutors');
+        else if (path === '/bookings') setActiveTab('bookings');
+        else if (path === '/wallet') setActiveTab('wallet');
+        else if (path === '/progress') setActiveTab('progress');
+        else if (path === '/admin-reviews') setActiveTab('admin-reviews');
+        else if (path === '/home') setActiveTab('home');
+        else {
+          setActiveTab('home');
+          window.history.replaceState(null, '', '/home');
         }
       }
     };
@@ -49,7 +68,7 @@ export default function App() {
     handleLocation();
     window.addEventListener('popstate', handleLocation);
     return () => window.removeEventListener('popstate', handleLocation);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeTab]);
 
   // Phase 4 Wallet State
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -59,7 +78,6 @@ export default function App() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedTutor, setSelectedTutor] = useState<TutorSearchResult | null>(null);
-  const [isProfileEditOpen, setIsProfileEditOpen] = useState<boolean>(false);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -333,7 +351,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {isTutorRole && (
             <button
-              onClick={() => setIsProfileEditOpen(true)}
+              onClick={() => handleOpenProfileEdit(true)}
               style={{
                 background: 'rgba(56, 189, 248, 0.15)',
                 border: '1px solid #38bdf8',
@@ -444,7 +462,7 @@ export default function App() {
                 </button>
                 {isTutorRole && (
                   <button
-                    onClick={() => setIsProfileEditOpen(true)}
+                    onClick={() => handleOpenProfileEdit(true)}
                     style={{
                       background: 'rgba(56, 189, 248, 0.15)',
                       border: '1px solid #38bdf8',
@@ -1014,7 +1032,7 @@ export default function App() {
       {/* Tutor Profile Edit Modal */}
       <TutorProfileEditModal
         isOpen={isProfileEditOpen}
-        onClose={() => setIsProfileEditOpen(false)}
+        onClose={() => handleOpenProfileEdit(false)}
         onProfileSaved={fetchTutors}
       />
 
