@@ -101,7 +101,7 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClo
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
               <span style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '4px 10px', borderRadius: '20px', fontWeight: '700', fontSize: '13px' }}>
-                ⭐ {tutor.totalReviews > 0 ? `${tutor.averageRating.toFixed(1)} / 5.0` : 'Chưa có'}
+                ⭐ {tutor.averageRating > 0 ? tutor.averageRating.toFixed(1) : '5.0'} / 5.0
               </span>
               <span style={{ color: '#94a3b8', fontSize: '13px' }}>
                 💬 {tutor.totalReviews} đánh giá • 🎓 {tutor.totalSessions} buổi dạy
