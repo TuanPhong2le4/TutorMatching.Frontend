@@ -40,7 +40,7 @@ export default function App() {
       else if (path === '/admin-reviews') setActiveTab('admin-reviews');
       else {
         setActiveTab('home');
-        if (path !== '/' && path !== '/login' && path !== '/register') {
+        if (path !== '/') {
           window.history.replaceState(null, '', '/');
         }
       }
