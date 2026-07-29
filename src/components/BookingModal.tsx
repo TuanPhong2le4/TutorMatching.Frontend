@@ -150,8 +150,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
       setErrorMsg(null);
 
       // Create DateTime strings for scheduled times
-      const startDateTime = `${bookingDate}T${startTime}:00.000Z`;
-      const endDateTime = `${bookingDate}T${endTime}:00.000Z`;
+      const startDateTime = new Date(`${bookingDate}T${startTime}`).toISOString();
+      const endDateTime = new Date(`${bookingDate}T${endTime}`).toISOString();
 
       await bookingService.createBooking({
         tutorId: tutor.tutorId,
