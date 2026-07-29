@@ -17,6 +17,13 @@ import { SessionRecordModal } from './components/SessionRecordModal';
 import { LearningProgressDashboard } from './components/LearningProgressDashboard';
 import { AdminReviewsDashboard } from './components/AdminReviewsDashboard';
 
+// Phase 6 imports
+import { HubConnectionBuilder } from '@microsoft/signalr';
+import { notificationService } from './services/notificationService';
+import { NotificationDto } from './types/notification';
+import { ToastContainer, ToastItem } from './components/ToastContainer';
+import { NotificationDropdown } from './components/NotificationDropdown';
+
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews'>('home');
@@ -117,6 +124,115 @@ export default function App() {
   const [submittingAction, setSubmittingAction] = useState<boolean>(false);
 
   const isTutorRole = Number(user?.role) === 1 || user?.role === 'Tutor';
+
+  // Phase 6 real-time notifications states
+  const [notifications, setNotifications] = useState<NotificationDto[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  // Load initial notifications & count on mount / login
+  const fetchNotifications = async () => {
+    try {
+      const res = await notificationService.getNotifications(1, 10);
+      setNotifications(res.items || []);
+      const count = await notificationService.getUnreadCount();
+      setUnreadCount(count);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications();
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [isAuthenticated]);
+
+  // SignalR Hub Connection Setup
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Connect to /hubs/notifications hub, passing token in query string
+    const connection = new HubConnectionBuilder()
+      .withUrl('/hubs/notifications', {
+        accessTokenFactory: () => token,
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    connection
+      .start()
+      .then(() => {
+        console.log('SignalR connected to NotificationHub successfully.');
+      })
+      .catch((err) => {
+        console.error('SignalR NotificationHub connection failed:', err);
+      });
+
+    // Listen to real-time incoming notification events
+    connection.on('ReceiveNotification', (notification: NotificationDto) => {
+      console.log('Received real-time notification:', notification);
+
+      // Add to notifications list
+      setNotifications((prev) => [notification, ...prev.slice(0, 9)]);
+      setUnreadCount((prev) => prev + 1);
+
+      // Add to toasts list
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+        },
+      ]);
+
+      // Dynamic reload depending on notification action type
+      if (notification.type === 'BookingCreated' || notification.type === 'BookingCancelled') {
+        fetchBookings();
+      }
+      if (notification.type === 'CreditChanged') {
+        fetchWalletBalance();
+      }
+    });
+
+    return () => {
+      connection.stop().then(() => console.log('SignalR connection stopped.'));
+    };
+  }, [isAuthenticated]);
+
+  const handleMarkNotificationRead = async (id: string) => {
+    try {
+      await notificationService.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+    }
+  };
+
+  const handleRemoveToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Load Subjects on mount
   useEffect(() => {
@@ -395,6 +511,15 @@ export default function App() {
               <span>{walletBalance !== null ? walletBalance.toFixed(1) : '...'} tc</span>
             </div>
           )}
+
+          {/* Phase 6 Notification Bell Dropdown */}
+          <NotificationDropdown
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onRefresh={fetchNotifications}
+            onMarkRead={handleMarkNotificationRead}
+            onMarkAllRead={handleMarkAllNotificationsRead}
+          />
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user?.fullName}</span>
@@ -1235,6 +1360,9 @@ export default function App() {
         subjectName={sessionSubjectName}
         onSuccess={fetchBookings}
       />
+
+      {/* Toast Container (Phase 6 Real-time alerts) */}
+      <ToastContainer toasts={toasts} onRemove={handleRemoveToast} />
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
