@@ -697,7 +697,7 @@ export default function App() {
                                 </td>
                                 <td style={{ padding: '16px', fontWeight: 700, color: '#a855f7' }}>💎 {b.creditAmount}</td>
                                 <td style={{ padding: '16px' }}>
-                                  <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, ...statusStyle }}>
+                                  <span style={{ display: 'inline-block', whiteSpace: 'nowrap', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, ...statusStyle }}>
                                     {statusText}
                                   </span>
                                 </td>
