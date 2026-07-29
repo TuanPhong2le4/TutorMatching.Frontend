@@ -29,6 +29,7 @@ export interface SearchTutorsParams {
   searchTerm?: string;
   subjectId?: string;
   minRating?: number;
+  sortBy?: string;
   minHourlyCredits?: number;
   maxHourlyCredits?: number;
   pageNumber?: number;

@@ -162,6 +162,7 @@ export default function App() {
         searchTerm: searchTerm || undefined,
         subjectId: selectedSubjectId || undefined,
         minRating: minRating > 0 ? minRating : undefined,
+        sortBy: 'rating_desc',
         pageNumber,
         pageSize: 6,
       });

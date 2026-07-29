@@ -58,7 +58,7 @@ export const TutorCard: React.FC<TutorCardProps> = ({ tutor, onSelect, onBook })
             {/* Rating & Sessions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px', color: '#94a3b8' }}>
               <span style={{ color: '#fbbf24', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                ⭐ {tutor.averageRating > 0 ? tutor.averageRating.toFixed(1) : '5.0'}
+                ⭐ {tutor.totalReviews > 0 ? tutor.averageRating.toFixed(1) : 'Chưa có'}
                 <span style={{ color: '#64748b' }}>({tutor.totalReviews})</span>
               </span>
               <span>•</span>
