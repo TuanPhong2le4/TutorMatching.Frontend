@@ -631,12 +631,12 @@ export default function App() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                           <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>MÔN HỌC</th>
-                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>{isTutorRole ? 'HỌC VIÊN' : 'GIA SƯ'}</th>
-                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>THỜI GIAN</th>
-                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>CHI PHÍ</th>
-                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>TRẠNG THÁI</th>
-                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>LIÊN KẾT / THAO TÁC</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>MÔN HỌC</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>{isTutorRole ? 'HỌC VIÊN' : 'GIA SƯ'}</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>THỜI GIAN</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>CHI PHÍ</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>TRẠNG THÁI</th>
+                            <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap' }}>LIÊN KẾT / THAO TÁC</th>
                           </tr>
                         </thead>
                         <tbody>
