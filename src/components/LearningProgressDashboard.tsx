@@ -42,31 +42,38 @@ export const LearningProgressDashboard: React.FC = () => {
       setLoading(true);
       
       let currentStudentId = selectedStudentId;
+      let currentSubjectId = selectedSubjectId;
 
-      // If tutor, load active students & subjects from bookings first
-      if (isTutor && students.length === 0) {
+      // Load active students & subjects from bookings
+      if (mySubjects.length === 0) {
         const bookingsRes = await bookingService.getMyBookings(1, 100);
         const uniqueStudentsMap = new Map<string, string>();
         const uniqueSubjectsMap = new Map<string, string>();
         
         bookingsRes.items?.forEach((b: BookingDto) => {
-          if (b.studentId && b.studentName) {
-            uniqueStudentsMap.set(b.studentId, b.studentName);
-          }
           if (b.subjectId && b.subjectName) {
             uniqueSubjectsMap.set(b.subjectId, b.subjectName);
           }
+          if (isTutor && b.studentId && b.studentName) {
+            uniqueStudentsMap.set(b.studentId, b.studentName);
+          }
         });
         
-        const loadedStudents = Array.from(uniqueStudentsMap.entries()).map(([id, name]) => ({ id, name }));
         const loadedSubjects = Array.from(uniqueSubjectsMap.entries()).map(([id, name]) => ({ id, name }));
-        
-        setStudents(loadedStudents);
         setMySubjects(loadedSubjects);
 
-        if (loadedStudents.length > 0) {
-          currentStudentId = loadedStudents[0].id;
-          setSelectedStudentId(currentStudentId);
+        if (loadedSubjects.length > 0 && !currentSubjectId) {
+          currentSubjectId = loadedSubjects[0].id;
+          setSelectedSubjectId(currentSubjectId);
+        }
+
+        if (isTutor) {
+          const loadedStudents = Array.from(uniqueStudentsMap.entries()).map(([id, name]) => ({ id, name }));
+          setStudents(loadedStudents);
+          if (loadedStudents.length > 0 && !currentStudentId) {
+            currentStudentId = loadedStudents[0].id;
+            setSelectedStudentId(currentStudentId);
+          }
         }
       }
 
@@ -80,16 +87,16 @@ export const LearningProgressDashboard: React.FC = () => {
       // Fetch goals
       const goalsList = await progressService.getLearningGoals(
         isTutor ? currentStudentId : undefined,
-        selectedSubjectId || undefined
+        currentSubjectId || undefined
       );
       setGoals(goalsList || []);
 
-      // If student, build subjects list from goals list if not already
-      if (isStudent && selectedSubjectId) {
-        const chart = await progressService.getProgressChartData(selectedSubjectId);
+      // Fetch chart
+      if (isStudent && currentSubjectId) {
+        const chart = await progressService.getProgressChartData(currentSubjectId);
         setChartData(chart);
-      } else if (isTutor && currentStudentId && selectedSubjectId) {
-        const chart = await progressService.getProgressChartData(selectedSubjectId, currentStudentId);
+      } else if (isTutor && currentStudentId && currentSubjectId) {
+        const chart = await progressService.getProgressChartData(currentSubjectId, currentStudentId);
         setChartData(chart);
       } else {
         setChartData(null);
@@ -407,10 +414,9 @@ export const LearningProgressDashboard: React.FC = () => {
               }}
             >
               <option value="">-- Tất cả môn học --</option>
-              {isTutor 
-                ? mySubjects.map(sub => <option key={sub.id} value={sub.id}>{sub.name}</option>)
-                : uniqueSubjects.map(subId => <option key={subId} value={subId}>Môn học của tôi</option>)
-              }
+              {mySubjects.map(sub => (
+                <option key={sub.id} value={sub.id}>{sub.name}</option>
+              ))}
             </select>
           </div>
         </div>
