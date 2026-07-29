@@ -30,6 +30,13 @@ export default function App() {
   const [isProfileEditOpen, setIsProfileEditOpen] = useState<boolean>(false);
 
   const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews') => {
+    const roleNum = Number(user?.role);
+    const isAdmin = roleNum === 0 || user?.role === 'Admin';
+
+    // Role guards for tab switching
+    if (tab === 'admin-reviews' && !isAdmin) return;
+    if (tab === 'progress' && isAdmin) return;
+
     setActiveTab(tab);
     const path = `/${tab}`;
     if (window.location.pathname !== path) {
@@ -38,6 +45,12 @@ export default function App() {
   };
 
   const handleOpenProfileEdit = (open: boolean) => {
+    const roleNum = Number(user?.role);
+    const isTutor = roleNum === 1 || user?.role === 'Tutor';
+
+    // Profile edit modal is only for tutors
+    if (open && !isTutor) return;
+
     setIsProfileEditOpen(open);
     if (open) {
       if (window.location.pathname !== '/profile') {
@@ -55,17 +68,48 @@ export default function App() {
     if (!isAuthenticated) return;
     const handleLocation = () => {
       const path = window.location.pathname;
+      const roleNum = Number(user?.role);
+      const isTutor = roleNum === 1 || user?.role === 'Tutor';
+      const isAdmin = roleNum === 0 || user?.role === 'Admin';
+
+      // 1. Guard check for /profile (Tutors only)
       if (path === '/profile') {
+        if (!isTutor) {
+          setIsProfileEditOpen(false);
+          setActiveTab('home');
+          window.history.replaceState(null, '', '/home');
+          return;
+        }
         setIsProfileEditOpen(true);
       } else {
         setIsProfileEditOpen(false);
-        if (path === '/tutors') setActiveTab('tutors');
-        else if (path === '/bookings') setActiveTab('bookings');
-        else if (path === '/wallet') setActiveTab('wallet');
-        else if (path === '/progress') setActiveTab('progress');
-        else if (path === '/admin-reviews') setActiveTab('admin-reviews');
-        else if (path === '/home') setActiveTab('home');
-        else {
+
+        // 2. Guard checks for tab routes
+        if (path === '/tutors') {
+          setActiveTab('tutors');
+        } else if (path === '/bookings') {
+          setActiveTab('bookings');
+        } else if (path === '/wallet') {
+          setActiveTab('wallet');
+        } else if (path === '/progress') {
+          // Progress is only for Students and Tutors
+          if (isAdmin) {
+            setActiveTab('home');
+            window.history.replaceState(null, '', '/home');
+          } else {
+            setActiveTab('progress');
+          }
+        } else if (path === '/admin-reviews') {
+          // Admin reviews is only for Admin
+          if (!isAdmin) {
+            setActiveTab('home');
+            window.history.replaceState(null, '', '/home');
+          } else {
+            setActiveTab('admin-reviews');
+          }
+        } else if (path === '/home') {
+          setActiveTab('home');
+        } else {
           setActiveTab('home');
           window.history.replaceState(null, '', '/home');
         }
@@ -75,7 +119,7 @@ export default function App() {
     handleLocation();
     window.addEventListener('popstate', handleLocation);
     return () => window.removeEventListener('popstate', handleLocation);
-  }, [isAuthenticated, activeTab]);
+  }, [isAuthenticated, activeTab, user]);
 
   // Phase 4 Wallet State
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
