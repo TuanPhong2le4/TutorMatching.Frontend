@@ -21,6 +21,36 @@ export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews'>('home');
 
+  const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews') => {
+    setActiveTab(tab);
+    const path = tab === 'home' ? '/' : `/${tab}`;
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, '', path);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const handleLocation = () => {
+      const path = window.location.pathname;
+      if (path === '/tutors') setActiveTab('tutors');
+      else if (path === '/bookings') setActiveTab('bookings');
+      else if (path === '/wallet') setActiveTab('wallet');
+      else if (path === '/progress') setActiveTab('progress');
+      else if (path === '/admin-reviews') setActiveTab('admin-reviews');
+      else {
+        setActiveTab('home');
+        if (path !== '/' && path !== '/login' && path !== '/register') {
+          window.history.replaceState(null, '', '/');
+        }
+      }
+    };
+
+    handleLocation();
+    window.addEventListener('popstate', handleLocation);
+    return () => window.removeEventListener('popstate', handleLocation);
+  }, [isAuthenticated]);
+
   // Phase 4 Wallet State
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
@@ -166,7 +196,7 @@ export default function App() {
     setBookingNotice('Đặt lịch học thành công! Vui lòng kiểm tra Lịch học của bạn.');
     setTimeout(() => setBookingNotice(null), 5000);
     setBookingsPage(1);
-    setActiveTab('bookings');
+    handleTabChange('bookings');
     fetchWalletBalance();
   };
 
@@ -255,7 +285,7 @@ export default function App() {
           zIndex: 100,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => setActiveTab('home')}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => handleTabChange('home')}>
           <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #38bdf8, #a855f7)', display: 'grid', placeItems: 'center', fontWeight: 'bold', fontSize: '20px' }}>
             T
           </div>
@@ -264,35 +294,35 @@ export default function App() {
 
         <nav style={{ display: 'flex', gap: '24px' }}>
           <button 
-            onClick={() => setActiveTab('home')}
+            onClick={() => handleTabChange('home')}
             style={{ background: 'none', border: 'none', color: activeTab === 'home' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
             Trang Chủ
           </button>
           <button 
-            onClick={() => setActiveTab('tutors')}
+            onClick={() => handleTabChange('tutors')}
             style={{ background: 'none', border: 'none', color: activeTab === 'tutors' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
             🔍 Tìm Gia Sư
           </button>
           <button 
-            onClick={() => setActiveTab('bookings')}
+            onClick={() => handleTabChange('bookings')}
             style={{ background: 'none', border: 'none', color: activeTab === 'bookings' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
             🗓️ Lịch Học
           </button>
           <button 
-            onClick={() => setActiveTab('wallet')}
+            onClick={() => handleTabChange('wallet')}
             style={{ background: 'none', border: 'none', color: activeTab === 'wallet' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
             {Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Duyệt Nạp Tiền' : '💎 Ví Tín Dụng'}
           </button>
           {(Number(user?.role) === 0 || user?.role === 'Admin') && (
             <button 
-              onClick={() => setActiveTab('admin-reviews')}
+              onClick={() => handleTabChange('admin-reviews')}
               style={{ background: 'none', border: 'none', color: activeTab === 'admin-reviews' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
               👑 Quản Lý Đánh Giá
             </button>
           )}
           {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
             <button 
-              onClick={() => setActiveTab('progress')}
+              onClick={() => handleTabChange('progress')}
               style={{ background: 'none', border: 'none', color: activeTab === 'progress' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
               🎯 Tiến Độ Học
             </button>
@@ -325,7 +355,7 @@ export default function App() {
           {/* Wallet Balance Pill */}
           {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
             <div
-              onClick={() => setActiveTab('wallet')}
+              onClick={() => handleTabChange('wallet')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -409,7 +439,7 @@ export default function App() {
               </p>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '48px' }}>
-                <button className="btn-primary" style={{ padding: '14px 32px', fontSize: '16px' }} onClick={() => setActiveTab('tutors')}>
+                <button className="btn-primary" style={{ padding: '14px 32px', fontSize: '16px' }} onClick={() => handleTabChange('tutors')}>
                   🔍 Khám Phá {totalCount > 0 ? `${totalCount} Gia Sư` : 'Danh Sách Gia Sư'}
                 </button>
                 {isTutorRole && (
@@ -436,7 +466,7 @@ export default function App() {
             <div style={{ marginBottom: '40px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>⭐ Gia Sư Nổi Bật Được Đánh Giá Cao</h3>
-                <button onClick={() => setActiveTab('tutors')} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontWeight: 600 }}>Xem tất cả →</button>
+                <button onClick={() => handleTabChange('tutors')} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontWeight: 600 }}>Xem tất cả →</button>
               </div>
 
               {loading ? (
@@ -779,17 +809,19 @@ export default function App() {
                                     {isTutorRole && b.status === 1 && (
                                       <>
                                         <button
+                                          disabled={!isStarted}
                                           onClick={() => handleCompleteBooking(b.id)}
                                           style={{
                                             padding: '6px 12px',
-                                            backgroundColor: '#a855f7',
+                                            backgroundColor: isStarted ? '#a855f7' : 'rgba(168, 85, 247, 0.4)',
                                             border: 'none',
-                                            color: '#fff',
+                                            color: isStarted ? '#fff' : '#cbd5e1',
                                             borderRadius: '6px',
                                             fontSize: '12px',
                                             fontWeight: 600,
-                                            cursor: 'pointer',
+                                            cursor: isStarted ? 'pointer' : 'not-allowed',
                                           }}
+                                          title={!isStarted ? "Không thể hoàn thành khi buổi học chưa diễn ra" : undefined}
                                         >
                                           🎓 Hoàn Thành
                                         </button>

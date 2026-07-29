@@ -34,6 +34,33 @@ export const AuthPage: React.FC = () => {
   const { login, register } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
+
+  React.useEffect(() => {
+    const handleLocation = () => {
+      const path = window.location.pathname;
+      if (path === '/register') {
+        setMode('register');
+      } else {
+        setMode('login');
+        if (path !== '/login') {
+          window.history.replaceState(null, '', '/login');
+        }
+      }
+    };
+
+    handleLocation();
+    window.addEventListener('popstate', handleLocation);
+    return () => window.removeEventListener('popstate', handleLocation);
+  }, []);
+
+  const handleSetMode = (newMode: 'login' | 'register') => {
+    setMode(newMode);
+    window.history.pushState(null, '', `/${newMode}`);
+    setGeneralError(null);
+    setFieldErrors({});
+    setTouchedFields({});
+  };
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -267,12 +294,7 @@ export const AuthPage: React.FC = () => {
           >
             <button
               type="button"
-              onClick={() => {
-                setMode('login');
-                setGeneralError(null);
-                setFieldErrors({});
-                setTouchedFields({});
-              }}
+              onClick={() => handleSetMode('login')}
               style={{
                 flex: 1,
                 background: 'none',
@@ -289,12 +311,7 @@ export const AuthPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setMode('register');
-                setGeneralError(null);
-                setFieldErrors({});
-                setTouchedFields({});
-              }}
+              onClick={() => handleSetMode('register')}
               style={{
                 flex: 1,
                 background: 'none',
