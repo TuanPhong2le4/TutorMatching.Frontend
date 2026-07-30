@@ -1,5 +1,6 @@
 import React from 'react';
 import { TutorSearchResult } from '../types/tutor';
+import { useAuth } from '../context/AuthContext';
 
 interface TutorCardProps {
   tutor: TutorSearchResult;
@@ -8,6 +9,11 @@ interface TutorCardProps {
 }
 
 export const TutorCard: React.FC<TutorCardProps> = ({ tutor, onSelect, onBook }) => {
+  const { user } = useAuth();
+  const isSelf = user?.id === tutor.tutorId;
+  const isTutor = Number(user?.role) === 1 || user?.role === 'Tutor';
+  const showBookButton = !isSelf && !isTutor;
+
   const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(tutor.fullName)}&background=0D8ABC&color=fff&size=128`;
   const primarySubject = tutor.subjects?.[0];
 
@@ -160,20 +166,22 @@ export const TutorCard: React.FC<TutorCardProps> = ({ tutor, onSelect, onBook })
           >
             Chi tiết
           </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onBook(tutor);
-            }}
-            className="btn-primary"
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-            }}
-          >
-            Đặt lịch
-          </button>
+          {showBookButton && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBook(tutor);
+              }}
+              className="btn-primary"
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+              }}
+            >
+              Đặt lịch
+            </button>
+          )}
         </div>
       </div>
     </div>

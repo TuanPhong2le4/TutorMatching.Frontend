@@ -14,6 +14,9 @@ export interface TutorSearchResult {
   averageRating: number;
   totalReviews: number;
   totalSessions: number;
+  phone?: string | null;
+  email?: string | null;
+  defaultMeetingLink?: string | null;
   subjects: TutorSubject[];
 }
 

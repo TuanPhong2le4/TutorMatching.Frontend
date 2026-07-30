@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TutorSearchResult } from '../types/tutor';
 import { availabilityService, AvailabilityDto } from '../services/availabilityService';
 import { reviewService, ReviewDto } from '../services/reviewService';
+import { useAuth } from '../context/AuthContext';
 
 interface TutorDetailModalProps {
   tutor: TutorSearchResult | null;
@@ -10,6 +11,12 @@ interface TutorDetailModalProps {
 }
 
 export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClose, onBook }) => {
+  const { user } = useAuth();
+  const isAdmin = Number(user?.role) === 0 || user?.role === 'Admin';
+  const isSelf = tutor && user?.id === tutor.tutorId;
+  const isTutor = Number(user?.role) === 1 || user?.role === 'Tutor';
+  const showBookButton = !isSelf && !isTutor;
+
   const [availabilities, setAvailabilities] = useState<AvailabilityDto[]>([]);
   const [reviews, setReviews] = useState<ReviewDto[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
@@ -239,6 +246,26 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClo
           )}
         </div>
 
+        {/* Admin Only Info Section */}
+        {isAdmin && (
+          <div style={{ marginBottom: '24px', backgroundColor: 'rgba(168, 85, 247, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+            <div style={{ fontWeight: '600', color: '#c084fc', fontSize: '14px', marginBottom: '8px' }}>
+              👑 Thông Tin Quản Trị (Admin Only)
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: '#cbd5e1' }}>
+              <div>📞 Số điện thoại: <strong style={{ color: '#fff' }}>{tutor.phone || 'Chưa cập nhật'}</strong></div>
+              <div>✉️ Email: <strong style={{ color: '#fff' }}>{tutor.email || 'Chưa cập nhật'}</strong></div>
+              <div>🔗 Link học default: {tutor.defaultMeetingLink ? (
+                <a href={tutor.defaultMeetingLink} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>
+                  {tutor.defaultMeetingLink}
+                </a>
+              ) : (
+                <strong style={{ color: '#64748b' }}>Chưa cấu hình</strong>
+              )}</div>
+            </div>
+          </div>
+        )}
+
         {/* Modal Actions */}
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button
@@ -256,19 +283,21 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClo
           >
             Đóng
           </button>
-          <button
-            onClick={() => {
-              onClose();
-              onBook(tutor);
-            }}
-            className="btn-primary"
-            style={{
-              padding: '12px 24px',
-              fontSize: '14px',
-            }}
-          >
-            🗓️ Đặt Lịch Học Với Gia Sư
-          </button>
+          {showBookButton && (
+            <button
+              onClick={() => {
+                onClose();
+                onBook(tutor);
+              }}
+              className="btn-primary"
+              style={{
+                padding: '12px 24px',
+                fontSize: '14px',
+              }}
+            >
+              🗓️ Đặt Lịch Học Với Gia Sư
+            </button>
+          )}
         </div>
       </div>
     </div>
