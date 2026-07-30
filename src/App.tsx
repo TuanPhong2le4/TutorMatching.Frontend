@@ -131,12 +131,22 @@ export default function App() {
   const [selectedTutor, setSelectedTutor] = useState<TutorSearchResult | null>(null);
 
   // Filter States
+  const [searchTermInput, setSearchTermInput] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [minRating, setMinRating] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
+
+  // Debounce search input
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setSearchTerm(searchTermInput);
+      setPageNumber(1);
+    }, 350);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTermInput]);
 
   // Booking notification toast state
   const [bookingNotice, setBookingNotice] = useState<string | null>(null);
@@ -338,6 +348,7 @@ export default function App() {
   };
 
   const handleResetFilters = () => {
+    setSearchTermInput('');
     setSearchTerm('');
     setSelectedSubjectId('');
     setMinRating(0);
@@ -686,8 +697,8 @@ export default function App() {
 
             {/* Search Filter Bar Component */}
             <TutorSearchFilter
-              searchTerm={searchTerm}
-              onSearchChange={(val) => { setSearchTerm(val); setPageNumber(1); }}
+              searchTerm={searchTermInput}
+              onSearchChange={(val) => { setSearchTermInput(val); }}
               selectedSubjectId={selectedSubjectId}
               onSubjectChange={(val) => { setSelectedSubjectId(val); setPageNumber(1); }}
               minRating={minRating}
@@ -697,7 +708,7 @@ export default function App() {
             />
 
             {/* Tutors Grid */}
-            {loading ? (
+            {tutors.length === 0 && loading ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="glass-panel" style={{ padding: '24px', height: '260px', opacity: 0.5 }}>
@@ -706,7 +717,33 @@ export default function App() {
                 ))}
               </div>
             ) : tutors.length > 0 ? (
-              <div>
+              <div style={{ 
+                opacity: loading ? 0.6 : 1, 
+                pointerEvents: loading ? 'none' : 'auto',
+                transition: 'opacity 0.2s ease-in-out',
+                position: 'relative'
+              }}>
+                {loading && (
+                  <div className="pulse" style={{
+                    position: 'absolute',
+                    top: '-30px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 10,
+                    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                    color: '#38bdf8',
+                    padding: '6px 16px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    backdropFilter: 'blur(4px)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    ⏳ Đang cập nhật kết quả...
+                  </div>
+                )}
                 <div style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '16px' }}>
                   Tìm thấy <strong style={{ color: '#38bdf8' }}>{totalCount}</strong> gia sư phù hợp
                 </div>
