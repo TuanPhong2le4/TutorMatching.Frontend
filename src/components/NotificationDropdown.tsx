@@ -8,6 +8,7 @@ interface NotificationDropdownProps {
   onRefresh: () => void;
   onMarkRead: (id: string) => void;
   onMarkAllRead: () => void;
+  onNavigate?: (tab: string) => void;
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
@@ -16,6 +17,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   onRefresh,
   onMarkRead,
   onMarkAllRead,
+  onNavigate,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -55,20 +57,40 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   };
 
   // Get icons and colors based on notification type
-  const getTypeDetails = (type: string) => {
+  const getTypeDetails = (type: string, title?: string, relatedEntityType?: string | null) => {
     switch (type) {
       case 'BookingCreated':
-        return { icon: '📅', color: '#38bdf8' };
+        return { icon: '📅', color: '#38bdf8', tab: 'bookings' };
       case 'BookingConfirmed':
-        return { icon: '✅', color: '#10b981' };
+        return { icon: '✅', color: '#10b981', tab: 'bookings' };
       case 'BookingCancelled':
-        return { icon: '❌', color: '#f87171' };
+        return { icon: '❌', color: '#f87171', tab: 'bookings' };
       case 'ReviewReceived':
-        return { icon: '⭐', color: '#fbbf24' };
+        return { icon: '⭐', color: '#fbbf24', tab: 'bookings' };
       case 'CreditChanged':
-        return { icon: '💰', color: '#34d399' };
+        return { icon: '💰', color: '#34d399', tab: 'wallet' };
+      case 'System':
+        // Deposit request notifications for admin
+        if (relatedEntityType === 'DepositRequest' || (title && title.includes('nạp tiền'))) {
+          return { icon: '💳', color: '#fbbf24', tab: 'wallet' };
+        }
+        if (title && (title.includes('WARNING') || title.includes('Cảnh cáo'))) {
+          return { icon: '⚠️', color: '#ef4444', tab: 'center-notifications' };
+        }
+        return { icon: '🔔', color: '#a78bfa', tab: 'center-notifications' };
       default:
-        return { icon: '🔔', color: '#a78bfa' };
+        return { icon: '🔔', color: '#a78bfa', tab: null as string | null };
+    }
+  };
+
+  // Handle notification click: mark as read then navigate
+  const handleNotificationClick = (n: NotificationDto, tab: string | null) => {
+    if (!n.isRead) {
+      onMarkRead(n.id);
+    }
+    setIsOpen(false);
+    if (tab && onNavigate) {
+      onNavigate(tab);
     }
   };
 
@@ -187,21 +209,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               </div>
             ) : (
               notifications.map((n) => {
-                const { icon, color } = getTypeDetails(n.type);
+                const { icon, color, tab } = getTypeDetails(n.type, n.title, n.relatedEntityType);
                 return (
                   <div
                     key={n.id}
-                    onClick={() => {
-                      if (!n.isRead) {
-                        onMarkRead(n.id);
-                      }
-                    }}
+                    onClick={() => handleNotificationClick(n, tab)}
                     style={{
                       padding: '12px 16px',
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '12px',
-                      cursor: 'pointer',
+                      cursor: tab ? 'pointer' : 'default',
                       transition: 'background-color 0.2s',
                       backgroundColor: n.isRead ? 'transparent' : 'rgba(56, 189, 248, 0.04)',
                       borderBottom: '1px solid rgba(255,255,255,0.03)',
@@ -212,6 +230,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                         ? 'transparent'
                         : 'rgba(56, 189, 248, 0.04)')
                     }
+                    title={tab ? `Nhấn để xem ${tab === 'bookings' ? 'Lịch Học' : 'Ví Tín Dụng'}` : ''}
                   >
                     {/* Icon */}
                     <div

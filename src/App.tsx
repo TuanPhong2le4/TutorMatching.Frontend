@@ -16,6 +16,8 @@ import { ReviewModal } from './components/ReviewModal';
 import { SessionRecordModal } from './components/SessionRecordModal';
 import { LearningProgressDashboard } from './components/LearningProgressDashboard';
 import { AdminReviewsDashboard } from './components/AdminReviewsDashboard';
+import { AdminUserManagement } from './components/AdminUserManagement';
+import { CenterNotifications } from './components/CenterNotifications';
 
 // Phase 6 imports
 import { HubConnectionBuilder } from '@microsoft/signalr';
@@ -26,16 +28,30 @@ import { NotificationDropdown } from './components/NotificationDropdown';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'center-notifications'>('home');
+
+  // Role-based active tab guards during render to prevent stale/unauthorized tab mounts
+  const roleNum = Number(user?.role);
+  const isAdmin = roleNum === 0 || user?.role === 'Admin';
+  if (isAuthenticated) {
+    if (isAdmin && (activeTab === 'progress' || activeTab === 'center-notifications')) {
+      setActiveTab('home');
+    }
+    if (!isAdmin && (activeTab === 'admin-reviews' || activeTab === 'admin-users')) {
+      setActiveTab('home');
+    }
+  }
   const [isProfileEditOpen, setIsProfileEditOpen] = useState<boolean>(false);
 
-  const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews') => {
+  const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'center-notifications') => {
     const roleNum = Number(user?.role);
     const isAdmin = roleNum === 0 || user?.role === 'Admin';
 
     // Role guards for tab switching
     if (tab === 'admin-reviews' && !isAdmin) return;
+    if (tab === 'admin-users' && !isAdmin) return;
     if (tab === 'progress' && isAdmin) return;
+    if (tab === 'center-notifications' && isAdmin) return;
 
     setActiveTab(tab);
     const path = `/${tab}`;
@@ -99,6 +115,13 @@ export default function App() {
           } else {
             setActiveTab('progress');
           }
+        } else if (path === '/center-notifications') {
+          if (isAdmin) {
+            setActiveTab('home');
+            window.history.replaceState(null, '', '/home');
+          } else {
+            setActiveTab('center-notifications');
+          }
         } else if (path === '/admin-reviews') {
           // Admin reviews is only for Admin
           if (!isAdmin) {
@@ -106,6 +129,14 @@ export default function App() {
             window.history.replaceState(null, '', '/home');
           } else {
             setActiveTab('admin-reviews');
+          }
+        } else if (path === '/admin-users') {
+          // Admin user management is only for Admin
+          if (!isAdmin) {
+            setActiveTab('home');
+            window.history.replaceState(null, '', '/home');
+          } else {
+            setActiveTab('admin-users');
           }
         } else if (path === '/home') {
           setActiveTab('home');
@@ -202,6 +233,7 @@ export default function App() {
     } else {
       setNotifications([]);
       setUnreadCount(0);
+      setActiveTab('home');
     }
   }, [isAuthenticated]);
 
@@ -504,18 +536,57 @@ export default function App() {
             {Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Duyệt Nạp Tiền' : '💎 Ví Tín Dụng'}
           </button>
           {(Number(user?.role) === 0 || user?.role === 'Admin') && (
-            <button 
-              onClick={() => handleTabChange('admin-reviews')}
-              style={{ background: 'none', border: 'none', color: activeTab === 'admin-reviews' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-              👑 Quản Lý Đánh Giá
-            </button>
+            <>
+              <button 
+                onClick={() => handleTabChange('admin-reviews')}
+                style={{ background: 'none', border: 'none', color: activeTab === 'admin-reviews' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
+                👑 Quản Lý Đánh Giá
+              </button>
+              <button 
+                onClick={() => handleTabChange('admin-users')}
+                style={{ background: 'none', border: 'none', color: activeTab === 'admin-users' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
+                👥 Quản Lý Người Dùng
+              </button>
+            </>
           )}
           {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
-            <button 
-              onClick={() => handleTabChange('progress')}
-              style={{ background: 'none', border: 'none', color: activeTab === 'progress' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-              🎯 Tiến Độ Học
-            </button>
+            <>
+              <button 
+                onClick={() => handleTabChange('progress')}
+                style={{ background: 'none', border: 'none', color: activeTab === 'progress' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
+                🎯 Tiến Độ Học
+              </button>
+              <button 
+                onClick={() => handleTabChange('center-notifications')}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: activeTab === 'center-notifications' ? '#38bdf8' : '#94a3b8', 
+                  cursor: 'pointer', 
+                  fontWeight: 600, 
+                  fontSize: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                📢 Thông báo Trung tâm
+                {notifications.filter(n => n.type === 'System' && !n.isRead).length > 0 && (
+                  <span style={{
+                    backgroundColor: '#ef4444',
+                    color: '#fff',
+                    borderRadius: '50%',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    padding: '2.5px 7px',
+                    lineHeight: 1,
+                    display: 'inline-block',
+                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)'
+                  }}>
+                    {notifications.filter(n => n.type === 'System' && !n.isRead).length}
+                  </span>
+                )}
+              </button>
+            </>
           )}
         </nav>
 
@@ -574,6 +645,7 @@ export default function App() {
             onRefresh={fetchNotifications}
             onMarkRead={handleMarkNotificationRead}
             onMarkAllRead={handleMarkAllNotificationsRead}
+            onNavigate={(tab) => handleTabChange(tab as any)}
           />
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -1230,6 +1302,16 @@ export default function App() {
         {/* Tab 6: Admin Reviews Dashboard */}
         {activeTab === 'admin-reviews' && (
           <AdminReviewsDashboard />
+        )}
+
+        {/* Tab 8: Admin User Management */}
+        {activeTab === 'admin-users' && (
+          <AdminUserManagement />
+        )}
+
+        {/* Tab 9: Center Notifications */}
+        {activeTab === 'center-notifications' && (
+          <CenterNotifications onNotificationsUpdated={fetchNotifications} />
         )}
       </main>
 

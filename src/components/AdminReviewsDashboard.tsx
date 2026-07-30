@@ -216,13 +216,15 @@ export const AdminReviewsDashboard: React.FC = () => {
 
                     return (
                       <tr key={rev.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '14px' }}>
-                        <td style={{ padding: '16px' }}>
+                        <td style={{ padding: '16px', whiteSpace: 'nowrap', width: '1%' }}>
                           <span
                             style={{
                               padding: '4px 10px',
                               borderRadius: '12px',
                               fontSize: '11px',
                               fontWeight: 600,
+                              whiteSpace: 'nowrap',
+                              display: 'inline-block',
                               color: isStudentToTutor ? '#38bdf8' : '#a855f7',
                               backgroundColor: isStudentToTutor ? 'rgba(56, 189, 248, 0.15)' : 'rgba(168, 85, 247, 0.15)',
                             }}
