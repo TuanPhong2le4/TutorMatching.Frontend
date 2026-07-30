@@ -328,7 +328,7 @@ export default function App() {
       });
 
       setTutors(res.items || []);
-      setTotalPages(res.totalPages || 1);
+      setTotalPages(Math.ceil((res.totalCount || 0) / 6));
       setTotalCount(res.totalCount || 0);
     } catch (err) {
       console.error('Failed to fetch tutors from API:', err);
