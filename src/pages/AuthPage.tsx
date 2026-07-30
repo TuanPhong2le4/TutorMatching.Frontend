@@ -123,6 +123,13 @@ export const AuthPage: React.FC = () => {
     const data = err?.response?.data;
     const statusCode = err?.response?.status;
 
+    if (statusCode === 403) {
+      mainError = data?.message || 'Tài khoản của bạn đã bị vô hiệu hóa hoặc sa thải. Vui lòng liên hệ trung tâm để được hỗ trợ.';
+      setFieldErrors(errors);
+      setGeneralError(mainError);
+      return;
+    }
+
     const messagesList = Array.isArray(data?.messages) ? data.messages : [];
     const singleMsg = data?.message || err?.message || '';
     const allMessages = [...messagesList, singleMsg];
