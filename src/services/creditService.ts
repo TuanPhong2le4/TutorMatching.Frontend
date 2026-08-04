@@ -38,8 +38,8 @@ export const creditService = {
     return res.data.data;
   },
 
-  async deposit(amount: number): Promise<number> {
-    const res = await api.post<{ data: number }>('/Credits/deposit', { amount });
+  async deposit(amount: number): Promise<string> {
+    const res = await api.post<{ data: string }>('/Credits/deposit', { amount });
     return res.data.data;
   },
 

@@ -349,6 +349,22 @@ export default function App() {
     }
   }, [isAuthenticated, activeTab]);
 
+  // Handle VNPAY callback status in URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    if (paymentStatus === 'success') {
+      alert('🎉 Nạp tiền qua VNPAY thành công! Tín chỉ đã được cộng vào tài khoản của bạn.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      fetchWalletBalance();
+      setActiveTab('wallet');
+    } else if (paymentStatus === 'failed') {
+      alert('❌ Thanh toán qua VNPAY thất bại hoặc bị hủy bỏ.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setActiveTab('wallet');
+    }
+  }, [isAuthenticated]);
+
   // Fetch Tutors when filters or activeTab change
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -533,7 +549,7 @@ export default function App() {
           <button 
             onClick={() => handleTabChange('wallet')}
             style={{ background: 'none', border: 'none', color: activeTab === 'wallet' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-            {Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Duyệt Nạp Tiền' : '💎 Ví Tín Dụng'}
+            {Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Quản Lý Nạp Tiền' : '💎 Ví Tín Dụng'}
           </button>
           {(Number(user?.role) === 0 || user?.role === 'Admin') && (
             <>

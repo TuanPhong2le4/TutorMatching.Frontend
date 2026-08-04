@@ -148,17 +148,17 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
         {/* Admin Dashboard header */}
         <div style={{ marginBottom: '24px' }}>
           <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '4px' }}>
-            🏦 Quản Lý Yêu Cầu Nạp Tiền
+            🏦 Lịch Sử Giao Dịch Nạp Tiền
           </h2>
           <p style={{ color: '#94a3b8', fontSize: '15px' }}>
-            Phê duyệt hoặc từ chối các yêu cầu nạp tiền từ Học viên và Gia sư trong hệ thống.
+            Theo dõi danh sách lịch sử các giao dịch nạp tiền tự động qua bên thứ 3 trong hệ thống.
           </p>
         </div>
 
         {/* Requests Table */}
         <div className="glass-panel" style={{ padding: '28px', borderRadius: '20px' }}>
           <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '20px', color: '#fff' }}>
-            📋 Danh Sách Yêu Cầu Chờ Duyệt ({adminTotalCount})
+            📋 Danh Sách Giao Dịch Nạp Tiền ({adminTotalCount})
           </h3>
 
           {loading ? (
@@ -182,22 +182,20 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                       <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>SỐ TIỀN YÊU CẦU</th>
                       <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>NGÀY GỬI</th>
                       <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>TRẠNG THÁI</th>
-                      <th style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>THAO TÁC</th>
                     </tr>
                   </thead>
                   <tbody>
                     {adminRequests.map((r) => {
                       const formattedDate = new Date(r.createdAt).toLocaleString('vi-VN');
-                      const isPending = r.status === 0;
 
                       // Status style
-                      let statusText = 'Chờ duyệt';
+                      let statusText = 'Đang xử lý (VNPAY)';
                       let statusStyle = { color: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.15)' };
                       if (r.status === 1) {
-                        statusText = 'Đã duyệt';
-                        statusStyle = { color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)' };
+                        statusText = 'Thành công (Tự động)';
+                        statusStyle = { color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)' };
                       } else if (r.status === 2) {
-                        statusText = 'Từ chối';
+                        statusText = 'Thất bại/Đã hủy';
                         statusStyle = { color: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.15)' };
                       }
 
@@ -220,45 +218,6 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                             <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, ...statusStyle }}>
                               {statusText}
                             </span>
-                          </td>
-                          <td style={{ padding: '16px' }}>
-                            {isPending ? (
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button
-                                  disabled={processingId !== null}
-                                  onClick={() => handleApproveRequest(r.id)}
-                                  style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#10b981',
-                                    border: 'none',
-                                    color: '#fff',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  {processingId === r.id ? 'Đang duyệt...' : '✔️ Duyệt'}
-                                </button>
-                                <button
-                                  disabled={processingId !== null}
-                                  onClick={() => handleRejectRequest(r.id)}
-                                  style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                    color: '#f87171',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  ❌ Từ Chối
-                                </button>
-                              </div>
-                            ) : (
-                              <span style={{ color: '#64748b', fontSize: '12px' }}>Đã xử lý</span>
-                            )}
                           </td>
                         </tr>
                       );

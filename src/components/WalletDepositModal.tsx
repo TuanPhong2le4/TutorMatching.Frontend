@@ -32,17 +32,12 @@ export const WalletDepositModal: React.FC<WalletDepositModalProps> = ({ isOpen, 
 
     try {
       setSubmitting(true);
-      const newBalance = await creditService.deposit(parsedAmount);
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        onDepositSuccess(newBalance);
-        onClose();
-      }, 1500);
+      const paymentUrl = await creditService.deposit(parsedAmount);
+      // Redirect directly to VNPAY payment portal
+      window.location.href = paymentUrl;
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.response?.data?.message || 'Có lỗi xảy ra khi nạp tiền. Vui lòng thử lại.');
-    } finally {
       setSubmitting(false);
     }
   };
@@ -269,7 +264,7 @@ export const WalletDepositModal: React.FC<WalletDepositModalProps> = ({ isOpen, 
                   cursor: submitting ? 'not-allowed' : 'pointer',
                 }}
               >
-                {submitting ? 'Đang giao dịch...' : '💳 Xác Nhận Nạp'}
+                {submitting ? 'Đang kết nối VNPAY...' : '💳 Xác Nhận Nạp'}
               </button>
             </div>
           </form>
