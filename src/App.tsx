@@ -19,6 +19,9 @@ import { AdminReviewsDashboard } from './components/AdminReviewsDashboard';
 import { AdminUserManagement } from './components/AdminUserManagement';
 import { CenterNotifications } from './components/CenterNotifications';
 import { AdminDashboard } from './components/AdminDashboard';
+import { profileService } from './services/profileService';
+import { availabilityService } from './services/availabilityService';
+import { AdminTutorApproval } from './components/AdminTutorApproval';
 
 // Phase 6 imports
 import { HubConnectionBuilder } from '@microsoft/signalr';
@@ -29,7 +32,7 @@ import { NotificationDropdown } from './components/NotificationDropdown';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'center-notifications'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'center-notifications'>('home');
 
   // Role-based active tab guards during render to prevent stale/unauthorized tab mounts
   const roleNum = Number(user?.role);
@@ -38,19 +41,52 @@ export default function App() {
     if (isAdmin && (activeTab === 'progress' || activeTab === 'center-notifications')) {
       setActiveTab('home');
     }
-    if (!isAdmin && (activeTab === 'admin-reviews' || activeTab === 'admin-users')) {
+    if (!isAdmin && (activeTab === 'admin-reviews' || activeTab === 'admin-users' || activeTab === 'admin-tutors')) {
       setActiveTab('home');
     }
   }
   const [isProfileEditOpen, setIsProfileEditOpen] = useState<boolean>(false);
+  const [tutorProfileState, setTutorProfileState] = useState<{
+    bio?: string;
+    qualifications?: string;
+    approvalStatus: number;
+    isApproved: boolean;
+  } | null>(null);
+  const [hasAvailability, setHasAvailability] = useState<boolean>(false);
 
-  const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'center-notifications') => {
+  const fetchTutorProfileStatus = async () => {
+    const isTutor = Number(user?.role) === 1 || user?.role === 'Tutor';
+    if (!isAuthenticated || !isTutor || !user?.id) return;
+    try {
+      const profile = await profileService.getMyProfile();
+      if (profile && profile.tutorProfile) {
+        setTutorProfileState({
+          bio: profile.tutorProfile.bio || '',
+          qualifications: profile.tutorProfile.qualifications || '',
+          approvalStatus: profile.tutorProfile.approvalStatus,
+          isApproved: profile.tutorProfile.isApproved,
+        });
+      }
+      
+      const availabilities = await availabilityService.getAvailabilities(user.id);
+      setHasAvailability(availabilities && availabilities.length > 0);
+    } catch (err) {
+      console.error('Failed to fetch tutor profile status or availabilities:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTutorProfileStatus();
+  }, [isAuthenticated, user]);
+
+  const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'center-notifications') => {
     const roleNum = Number(user?.role);
     const isAdmin = roleNum === 0 || user?.role === 'Admin';
 
     // Role guards for tab switching
     if (tab === 'admin-reviews' && !isAdmin) return;
     if (tab === 'admin-users' && !isAdmin) return;
+    if (tab === 'admin-tutors' && !isAdmin) return;
     if (tab === 'progress' && isAdmin) return;
     if (tab === 'center-notifications' && isAdmin) return;
 
@@ -138,6 +174,14 @@ export default function App() {
             window.history.replaceState(null, '', '/home');
           } else {
             setActiveTab('admin-users');
+          }
+        } else if (path === '/admin-tutors') {
+          // Admin tutor approval is only for Admin
+          if (!isAdmin) {
+            setActiveTab('home');
+            window.history.replaceState(null, '', '/home');
+          } else {
+            setActiveTab('admin-tutors');
           }
         } else if (path === '/home') {
           setActiveTab('home');
@@ -564,6 +608,11 @@ export default function App() {
                 style={{ background: 'none', border: 'none', color: activeTab === 'admin-users' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
                 👥 Quản Lý Người Dùng
               </button>
+              <button 
+                onClick={() => handleTabChange('admin-tutors')}
+                style={{ background: 'none', border: 'none', color: activeTab === 'admin-tutors' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
+                📝 Duyệt Hồ Sơ Gia Sư
+              </button>
             </>
           )}
           {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
@@ -721,6 +770,93 @@ export default function App() {
               <AdminDashboard />
             ) : (
               <div>
+                {isTutorRole && tutorProfileState && (
+                  <div style={{ marginBottom: '32px' }}>
+                    {tutorProfileState.approvalStatus === 0 && (
+                      <div
+                        className="glass-panel"
+                        style={{
+                          padding: '24px',
+                          borderRadius: '20px',
+                          border: '1px solid rgba(251, 191, 36, 0.25)',
+                          backgroundColor: 'rgba(251, 191, 36, 0.06)',
+                          color: '#fef08a',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '12px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px', fontWeight: 800, color: '#fbbf24' }}>
+                          ⚠️ Yêu cầu hoàn thiện thông tin Gia sư
+                        </div>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#cbd5e1', lineHeight: '1.6' }}>
+                          Để bắt đầu giảng dạy và nhận học viên trên hệ thống, bạn bắt buộc phải hoàn thành các bước thiết lập sau để Admin duyệt hồ sơ:
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '4px 0' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: tutorProfileState.bio && tutorProfileState.qualifications ? '#10b981' : '#fbbf24', fontWeight: 600 }}>
+                            {tutorProfileState.bio && tutorProfileState.qualifications ? '✅' : '❌'} Bước 1: Cập nhật Bio giới thiệu & Bằng cấp chuyên môn (Hiện tại: {tutorProfileState.bio && tutorProfileState.qualifications ? 'Đã hoàn tất' : 'Chưa hoàn tất'})
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: hasAvailability ? '#10b981' : '#fbbf24', fontWeight: 600 }}>
+                            {hasAvailability ? '✅' : '❌'} Bước 2: Thiết lập lịch rảnh giảng dạy trong tab Lịch Học (Hiện tại: {hasAvailability ? 'Đã hoàn tất' : 'Chưa hoàn tất'})
+                          </div>
+                        </div>
+                        {(!tutorProfileState.bio || !tutorProfileState.qualifications || !hasAvailability) ? (
+                          <div style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
+                            💡 Đơn đăng ký của bạn sẽ được tự động gửi tới Admin ngay sau khi cả hai bước trên hiển thị tích xanh.
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '14px', color: '#38bdf8', fontWeight: 700, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
+                            ⏳ Hồ sơ và lịch rảnh đã hoàn tất! Đang chờ Admin của TutorMatching xem xét phê duyệt.
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {tutorProfileState.approvalStatus === 1 && (
+                      <div
+                        className="glass-panel"
+                        style={{
+                          padding: '20px 24px',
+                          borderRadius: '16px',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          backgroundColor: 'rgba(16, 185, 129, 0.06)',
+                          color: '#d1fae5',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '16px'
+                        }}
+                      >
+                        <span style={{ fontSize: '32px' }}>✅</span>
+                        <div>
+                          <strong style={{ display: 'block', fontSize: '16px', color: '#10b981', marginBottom: '4px' }}>Hồ sơ của bạn đã được phê duyệt thành công!</strong>
+                          <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Chúc mừng! Bạn đã đủ điều kiện giảng dạy và có thể nhận học viên đặt lớp trên hệ thống.</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {tutorProfileState.approvalStatus === 2 && (
+                      <div
+                        className="glass-panel"
+                        style={{
+                          padding: '20px 24px',
+                          borderRadius: '16px',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          backgroundColor: 'rgba(239, 68, 68, 0.06)',
+                          color: '#fee2e2',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '16px'
+                        }}
+                      >
+                        <span style={{ fontSize: '32px' }}>❌</span>
+                        <div>
+                          <strong style={{ display: 'block', fontSize: '16px', color: '#f87171', marginBottom: '4px' }}>Đơn đăng ký gia sư bị từ chối phê duyệt!</strong>
+                          <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Rất tiếc, hồ sơ của bạn chưa đạt chuẩn giảng dạy. Bạn không thể nhận học sinh dạy lúc này. Hãy cập nhật lại thông tin Bio/Bằng cấp để tự động gửi duyệt lại.</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div style={{ textAlign: 'center', marginTop: '20px', marginBottom: '48px' }}>
                   <h2 style={{ fontSize: '46px', fontWeight: '800', lineHeight: 1.2, marginBottom: '16px' }}>
                     Tìm Gia Sư Hoàn Hảo CHO <br />
@@ -961,7 +1097,7 @@ export default function App() {
             </div>
 
             {isTutorRole && tutorSubTab === 'availability' ? (
-              <AvailabilityManager />
+              <AvailabilityManager onUpdate={fetchTutorProfileStatus} />
             ) : (
               <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
                 {bookingsLoading ? (
@@ -1332,6 +1468,11 @@ export default function App() {
           <AdminUserManagement />
         )}
 
+        {/* Tab 8.5: Admin Tutor Approval */}
+        {activeTab === 'admin-tutors' && (
+          <AdminTutorApproval />
+        )}
+
         {/* Tab 9: Center Notifications */}
         {activeTab === 'center-notifications' && (
           <CenterNotifications onNotificationsUpdated={fetchNotifications} />
@@ -1345,7 +1486,10 @@ export default function App() {
       <TutorProfileEditModal
         isOpen={isProfileEditOpen}
         onClose={() => handleOpenProfileEdit(false)}
-        onProfileSaved={fetchTutors}
+        onProfileSaved={() => {
+          fetchTutors();
+          fetchTutorProfileStatus();
+        }}
       />
 
       {/* Booking Modal (Phase 3) */}

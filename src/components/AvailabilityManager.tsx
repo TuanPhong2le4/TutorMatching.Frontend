@@ -26,7 +26,11 @@ export const formatTimeOnBlur = (val: string, setter: (v: string) => void) => {
   }
 };
 
-export const AvailabilityManager: React.FC = () => {
+export interface AvailabilityManagerProps {
+  onUpdate?: () => void;
+}
+
+export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({ onUpdate }) => {
   const { user } = useAuth();
   const [slots, setSlots] = useState<AvailabilityDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -133,6 +137,7 @@ export const AvailabilityManager: React.FC = () => {
       setSuccessMsg('Đã lưu cấu hình lịch rảnh thành công!');
       setTimeout(() => setSuccessMsg(null), 3000);
       loadAvailabilities();
+      onUpdate?.();
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.response?.data?.message || 'Có lỗi xảy ra khi lưu lịch rảnh. Vui lòng thử lại.');

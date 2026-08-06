@@ -12,6 +12,7 @@ export interface MyProfileData {
     bio?: string | null;
     qualifications?: string | null;
     isApproved: boolean;
+    approvalStatus: number;
     defaultMeetingLink?: string | null;
     averageRating: number;
     totalSessions: number;
