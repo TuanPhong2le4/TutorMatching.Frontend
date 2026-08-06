@@ -18,6 +18,7 @@ import { LearningProgressDashboard } from './components/LearningProgressDashboar
 import { AdminReviewsDashboard } from './components/AdminReviewsDashboard';
 import { AdminUserManagement } from './components/AdminUserManagement';
 import { CenterNotifications } from './components/CenterNotifications';
+import { AdminDashboard } from './components/AdminDashboard';
 
 // Phase 6 imports
 import { HubConnectionBuilder } from '@microsoft/signalr';
@@ -716,58 +717,64 @@ export default function App() {
         {/* Tab 1: Home Page */}
         {activeTab === 'home' && (
           <div>
-            <div style={{ textAlign: 'center', marginTop: '20px', marginBottom: '48px' }}>
-              <h2 style={{ fontSize: '46px', fontWeight: '800', lineHeight: 1.2, marginBottom: '16px' }}>
-                Tìm Gia Sư Hoàn Hảo CHO <br />
-                <span className="gradient-text">HÀNH TRÌNH HỌC TẬP CỦA BẠN</span>
-              </h2>
-              <p style={{ color: '#94a3b8', fontSize: '17px', maxWidth: '680px', margin: '0 auto 32px' }}>
-                Kết nối trực tiếp với gia sư chất lượng cao, lọc môn học thông minh, theo dõi đánh giá minh bạch và đặt lịch học theo tín chỉ với Backend ASP.NET Core.
-              </p>
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '48px' }}>
-                <button className="btn-primary" style={{ padding: '14px 32px', fontSize: '16px' }} onClick={() => handleTabChange('tutors')}>
-                  🔍 Khám Phá {totalCount > 0 ? `${totalCount} Gia Sư` : 'Danh Sách Gia Sư'}
-                </button>
-                {isTutorRole && (
-                  <button
-                    onClick={() => handleOpenProfileEdit(true)}
-                    style={{
-                      background: 'rgba(56, 189, 248, 0.15)',
-                      border: '1px solid #38bdf8',
-                      color: '#38bdf8',
-                      padding: '14px 28px',
-                      fontSize: '16px',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
-                  >
-                    ⚙️ Cập Nhật Hồ Sơ Gia Sư Của Tôi
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Featured Tutors Section on Home */}
-            <div style={{ marginBottom: '40px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>⭐ Gia Sư Nổi Bật Được Đánh Giá Cao</h3>
-                <button onClick={() => handleTabChange('tutors')} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontWeight: 600 }}>Xem tất cả →</button>
-              </div>
-
-              {loading ? (
-                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Đang tải danh sách gia sư từ CSDL...</div>
-              ) : tutors.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
-                  {tutors.slice(0, 3).map((tutor) => (
-                    <TutorCard key={tutor.tutorId} tutor={tutor} onSelect={setSelectedTutor} onBook={handleBookTutor} />
-                  ))}
+            {isAdmin ? (
+              <AdminDashboard />
+            ) : (
+              <div>
+                <div style={{ textAlign: 'center', marginTop: '20px', marginBottom: '48px' }}>
+                  <h2 style={{ fontSize: '46px', fontWeight: '800', lineHeight: 1.2, marginBottom: '16px' }}>
+                    Tìm Gia Sư Hoàn Hảo CHO <br />
+                    <span className="gradient-text">HÀNH TRÌNH HỌC TẬP CỦA BẠN</span>
+                  </h2>
+                  <p style={{ color: '#94a3b8', fontSize: '17px', maxWidth: '680px', margin: '0 auto 32px' }}>
+                    Kết nối trực tiếp với gia sư chất lượng cao, lọc môn học thông minh, theo dõi đánh giá minh bạch và đặt lịch học theo tín chỉ với Backend ASP.NET Core.
+                  </p>
+    
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '48px' }}>
+                    <button className="btn-primary" style={{ padding: '14px 32px', fontSize: '16px' }} onClick={() => handleTabChange('tutors')}>
+                      🔍 Khám Phá {totalCount > 0 ? `${totalCount} Gia Sư` : 'Danh Sách Gia Sư'}
+                    </button>
+                    {isTutorRole && (
+                      <button
+                        onClick={() => handleOpenProfileEdit(true)}
+                        style={{
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          border: '1px solid #38bdf8',
+                          color: '#38bdf8',
+                          padding: '14px 28px',
+                          fontSize: '16px',
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                        }}
+                      >
+                        ⚙️ Cập Nhật Hồ Sơ Gia Sư Của Tôi
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Chưa có gia sư nào tạo tài khoản trong hệ thống CSDL.</div>
-              )}
-            </div>
+    
+                {/* Featured Tutors Section on Home */}
+                <div style={{ marginBottom: '40px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#fff' }}>⭐ Gia Sư Nổi Bật Được Đánh Giá Cao</h3>
+                    <button onClick={() => handleTabChange('tutors')} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontWeight: 600 }}>Xem tất cả →</button>
+                  </div>
+    
+                  {loading ? (
+                    <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Đang tải danh sách gia sư từ CSDL...</div>
+                  ) : tutors.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
+                      {tutors.slice(0, 3).map((tutor) => (
+                        <TutorCard key={tutor.tutorId} tutor={tutor} onSelect={setSelectedTutor} onBook={handleBookTutor} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Chưa có gia sư nào tạo tài khoản trong hệ thống CSDL.</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
