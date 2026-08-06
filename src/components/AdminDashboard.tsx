@@ -22,8 +22,8 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const formatCurrency = (val: number) => {
-    // 1 credit = 10,000 VND
-    return (val * 10000).toLocaleString('vi-VN') + 'đ';
+    // 1 credit = 1,000 VND
+    return (val * 1000).toLocaleString('vi-VN') + 'đ';
   };
 
   const formatDate = (dateStr: string) => {
