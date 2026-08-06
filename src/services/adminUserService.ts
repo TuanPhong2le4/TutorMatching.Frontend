@@ -50,6 +50,10 @@ export interface AdminDashboardDto {
   goalCompletionRate: number;
   recentBookings: AdminRecentBookingDto[];
   totalRevenue: number;
+  tutorsGrowth: number;
+  studentsGrowth: number;
+  bookingsGrowth: number;
+  revenueGrowth: number;
 }
 
 export interface PendingTutorDto {

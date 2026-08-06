@@ -41,6 +41,16 @@ export const AdminDashboard: React.FC = () => {
     });
   };
 
+  const renderTrend = (growth: number) => {
+    if (growth > 0) {
+      return <span style={{ color: '#10b981', fontWeight: 600 }}>↑ {growth}%</span>;
+    } else if (growth < 0) {
+      return <span style={{ color: '#f87171', fontWeight: 600 }}>↓ {Math.abs(growth)}%</span>;
+    } else {
+      return <span style={{ color: '#94a3b8', fontWeight: 600 }}>→ 0%</span>;
+    }
+  };
+
   const currentDateStr = new Date().toLocaleDateString('vi-VN', {
     weekday: 'long',
     year: 'numeric',
@@ -96,9 +106,9 @@ export const AdminDashboard: React.FC = () => {
                 👨‍🏫
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
-              <span>↑ 12.5%</span>
-              <span style={{ color: '#64748b', fontWeight: 'normal' }}>so với tháng trước</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#cbd5e1' }}>
+              {stats && renderTrend(stats.tutorsGrowth)}
+              <span style={{ color: '#64748b' }}>so với tháng trước</span>
             </div>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #38bdf8, transparent)' }} />
           </div>
@@ -116,9 +126,9 @@ export const AdminDashboard: React.FC = () => {
                 🎓
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
-              <span>↑ 8.2%</span>
-              <span style={{ color: '#64748b', fontWeight: 'normal' }}>so với tháng trước</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#cbd5e1' }}>
+              {stats && renderTrend(stats.studentsGrowth)}
+              <span style={{ color: '#64748b' }}>so với tháng trước</span>
             </div>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #a855f7, transparent)' }} />
           </div>
@@ -136,9 +146,9 @@ export const AdminDashboard: React.FC = () => {
                 📅
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
-              <span>↑ 15.3%</span>
-              <span style={{ color: '#64748b', fontWeight: 'normal' }}>so với tháng trước</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#cbd5e1' }}>
+              {stats && renderTrend(stats.bookingsGrowth)}
+              <span style={{ color: '#64748b' }}>so với tháng trước</span>
             </div>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #ec4899, transparent)' }} />
           </div>
@@ -156,9 +166,9 @@ export const AdminDashboard: React.FC = () => {
                 🪙
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
-              <span>↑ 18.7%</span>
-              <span style={{ color: '#64748b', fontWeight: 'normal' }}>so với tháng trước</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#cbd5e1' }}>
+              {stats && renderTrend(stats.revenueGrowth)}
+              <span style={{ color: '#64748b' }}>so với tháng trước</span>
             </div>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
           </div>
