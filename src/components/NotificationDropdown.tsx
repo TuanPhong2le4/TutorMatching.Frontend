@@ -75,6 +75,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return { icon: '❌', color: '#f87171', tab: 'center-notifications' };
       case 'TutorApprovalRequest':
         return { icon: '📝', color: '#fbbf24', tab: 'admin-tutors' };
+      case 'OverdueClassWarning':
+        return { icon: '⚠️', color: '#ef4444', tab: 'bookings' };
       case 'System':
         // Deposit request notifications for admin
         if (relatedEntityType === 'DepositRequest' || (title && title.includes('nạp tiền'))) {
