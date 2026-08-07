@@ -51,9 +51,9 @@ export const creditService = {
   },
 
   // Admin approval APIs
-  async getAdminDepositRequests(pageNumber = 1, pageSize = 10): Promise<PagedResult<AdminDepositRequestDto>> {
+  async getAdminDepositRequests(pageNumber = 1, pageSize = 10, startDate?: string, endDate?: string): Promise<PagedResult<AdminDepositRequestDto>> {
     const res = await api.get<{ data: PagedResult<AdminDepositRequestDto> }>('/Admin/deposit-requests', {
-      params: { pageNumber, pageSize }
+      params: { pageNumber, pageSize, startDate, endDate }
     });
     return res.data.data;
   },

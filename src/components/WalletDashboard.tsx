@@ -23,6 +23,14 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
   const [adminTotalPages, setAdminTotalPages] = useState<number>(1);
   const [adminTotalCount, setAdminTotalCount] = useState<number>(0);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  
+  // Date filter query states
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
+  // Applied date filter states for query execution
+  const [appliedStartDate, setAppliedStartDate] = useState<string>('');
+  const [appliedEndDate, setAppliedEndDate] = useState<string>('');
 
   const isStudent = Number(user?.role) === 2 || user?.role === 'Student';
   const isTutor = Number(user?.role) === 1 || user?.role === 'Tutor';
@@ -30,11 +38,11 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
 
   useEffect(() => {
     if (isAdmin) {
-      fetchAdminRequests();
+      fetchAdminRequests(appliedStartDate, appliedEndDate);
     } else {
       fetchTransactions();
     }
-  }, [page, adminPage, isAdmin]);
+  }, [page, adminPage, isAdmin, appliedStartDate, appliedEndDate]);
 
   const fetchTransactions = async () => {
     try {
@@ -50,10 +58,10 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
     }
   };
 
-  const fetchAdminRequests = async () => {
+  const fetchAdminRequests = async (start = appliedStartDate, end = appliedEndDate) => {
     try {
       setLoading(true);
-      const res = await creditService.getAdminDepositRequests(adminPage, 10);
+      const res = await creditService.getAdminDepositRequests(adminPage, 10, start || undefined, end || undefined);
       setAdminRequests(res.items || []);
       setAdminTotalCount(res.totalCount || 0);
       setAdminTotalPages(Math.ceil((res.totalCount || 0) / 10));
@@ -152,6 +160,118 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
           </h2>
           <p style={{ color: '#94a3b8', fontSize: '15px' }}>
             Theo dõi danh sách lịch sử các giao dịch nạp tiền tự động qua bên thứ 3 trong hệ thống.
+          </p>
+        </div>
+
+        {/* Truy vấn giao dịch panel */}
+        <div className="glass-panel" style={{ padding: '28px', borderRadius: '20px', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '20px', color: '#fff' }}>
+            Truy vấn giao dịch
+          </h3>
+
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'stretch' }}>
+            {/* Từ ngày card */}
+            <div style={{
+              flex: 1,
+              minWidth: '240px',
+              backgroundColor: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Từ ngày</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    outline: 'none',
+                    width: '100%',
+                    cursor: 'pointer',
+                    colorScheme: 'dark'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Đến ngày card */}
+            <div style={{
+              flex: 1,
+              minWidth: '240px',
+              backgroundColor: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Đến ngày</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    outline: 'none',
+                    width: '100%',
+                    cursor: 'pointer',
+                    colorScheme: 'dark'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setAppliedStartDate(startDate);
+              setAppliedEndDate(endDate);
+              setAdminPage(1);
+            }}
+            style={{
+              width: '100%',
+              backgroundColor: '#1d4ed8',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '14px',
+              padding: '14px',
+              fontSize: '16px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              marginTop: '20px',
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 14px rgba(29, 78, 216, 0.3)',
+              textAlign: 'center'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1e40af';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#1d4ed8';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            Truy vấn
+          </button>
+
+          <p style={{ margin: '14px 0 0 0', fontSize: '13px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            ℹ️ Hệ thống hỗ trợ truy vấn lịch sử giao dịch trong vòng 1 năm kể từ ngày hiện tại
           </p>
         </div>
 
