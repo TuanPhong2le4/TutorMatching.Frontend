@@ -65,6 +65,17 @@ export interface PendingTutorDto {
   createdAt: string;
 }
 
+export interface AdminRevenuePeriodDto {
+  periodName: string;
+  revenue: number;
+  transactionCount: number;
+}
+
+export interface AdminRevenueReportDto {
+  totalRevenue: number;
+  periods: AdminRevenuePeriodDto[];
+}
+
 export interface PagedPendingTutorsResult {
   items: PendingTutorDto[];
   totalCount: number;
@@ -103,6 +114,20 @@ export const adminUserService = {
 
   async getDashboard(): Promise<AdminDashboardDto> {
     const res = await api.get<{ data: AdminDashboardDto }>('/Admin/dashboard');
+    return res.data.data;
+  },
+
+  async getRevenueReport(params?: {
+    year?: number;
+    filterType?: string;
+    sortBy?: string;
+  }): Promise<AdminRevenueReportDto> {
+    const query = new URLSearchParams();
+    if (params?.year) query.append('year', params.year.toString());
+    if (params?.filterType) query.append('filterType', params.filterType);
+    if (params?.sortBy) query.append('sortBy', params.sortBy);
+
+    const res = await api.get<{ data: AdminRevenueReportDto }>(`/Admin/revenue-report?${query.toString()}`);
     return res.data.data;
   },
 

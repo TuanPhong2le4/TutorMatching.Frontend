@@ -22,6 +22,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { profileService } from './services/profileService';
 import { availabilityService } from './services/availabilityService';
 import { AdminTutorApproval } from './components/AdminTutorApproval';
+import { AdminRevenueDashboard } from './components/AdminRevenueDashboard';
 
 // Phase 6 imports
 import { HubConnectionBuilder } from '@microsoft/signalr';
@@ -32,7 +33,7 @@ import { NotificationDropdown } from './components/NotificationDropdown';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'center-notifications'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'admin-revenue' | 'center-notifications'>('home');
 
   // Role-based active tab guards during render to prevent stale/unauthorized tab mounts
   const roleNum = Number(user?.role);
@@ -41,7 +42,7 @@ export default function App() {
     if (isAdmin && (activeTab === 'progress' || activeTab === 'center-notifications')) {
       setActiveTab('home');
     }
-    if (!isAdmin && (activeTab === 'admin-reviews' || activeTab === 'admin-users' || activeTab === 'admin-tutors')) {
+    if (!isAdmin && (activeTab === 'admin-reviews' || activeTab === 'admin-users' || activeTab === 'admin-tutors' || activeTab === 'admin-revenue')) {
       setActiveTab('home');
     }
   }
@@ -79,7 +80,7 @@ export default function App() {
     fetchTutorProfileStatus();
   }, [isAuthenticated, user]);
 
-  const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'center-notifications') => {
+  const handleTabChange = (tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'admin-revenue' | 'center-notifications') => {
     const roleNum = Number(user?.role);
     const isAdmin = roleNum === 0 || user?.role === 'Admin';
 
@@ -87,6 +88,7 @@ export default function App() {
     if (tab === 'admin-reviews' && !isAdmin) return;
     if (tab === 'admin-users' && !isAdmin) return;
     if (tab === 'admin-tutors' && !isAdmin) return;
+    if (tab === 'admin-revenue' && !isAdmin) return;
     if (tab === 'progress' && isAdmin) return;
     if (tab === 'center-notifications' && isAdmin) return;
 
@@ -182,6 +184,14 @@ export default function App() {
             window.history.replaceState(null, '', '/home');
           } else {
             setActiveTab('admin-tutors');
+          }
+        } else if (path === '/admin-revenue') {
+          // Admin revenue report is only for Admin
+          if (!isAdmin) {
+            setActiveTab('home');
+            window.history.replaceState(null, '', '/home');
+          } else {
+            setActiveTab('admin-revenue');
           }
         } else if (path === '/home') {
           setActiveTab('home');
@@ -612,6 +622,11 @@ export default function App() {
                 onClick={() => handleTabChange('admin-tutors')}
                 style={{ background: 'none', border: 'none', color: activeTab === 'admin-tutors' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
                 📝 Duyệt Hồ Sơ Gia Sư
+              </button>
+              <button 
+                onClick={() => handleTabChange('admin-revenue')}
+                style={{ background: 'none', border: 'none', color: activeTab === 'admin-revenue' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
+                📈 Doanh Thu
               </button>
             </>
           )}
@@ -1471,6 +1486,11 @@ export default function App() {
         {/* Tab 8.5: Admin Tutor Approval */}
         {activeTab === 'admin-tutors' && (
           <AdminTutorApproval />
+        )}
+
+        {/* Tab 8.6: Admin Revenue Dashboard */}
+        {activeTab === 'admin-revenue' && (
+          <AdminRevenueDashboard />
         )}
 
         {/* Tab 9: Center Notifications */}
