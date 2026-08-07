@@ -270,25 +270,30 @@ export default function App() {
 
   // Helper to group bookings with same subject and time slots for tutors
   const getGroupedBookings = (rawBookings: BookingDto[]): any[] => {
-    if (!isTutorRole) {
-      return rawBookings.map(b => ({
-        id: b.id,
-        subjectId: b.subjectId,
-        subjectName: b.subjectName,
-        scheduledStartAt: b.scheduledStartAt,
-        scheduledEndAt: b.scheduledEndAt,
-        meetingLink: b.meetingLink,
-        status: b.status,
-        creditAmount: b.creditAmount,
-        items: [b]
-      }));
-    }
-
     const groupsList: any[] = [];
     const keyMap = new Map<string, any>();
 
     rawBookings.forEach(b => {
-      const key = `${b.subjectId}_${b.scheduledStartAt}_${b.scheduledEndAt}`;
+      // Normalize dates to hour:minute precision to avoid timezone string mismatch or second/millisecond differences
+      const start = new Date(b.scheduledStartAt);
+      const end = new Date(b.scheduledEndAt);
+      
+      const startYear = start.getFullYear();
+      const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+      const startDate = String(start.getDate()).padStart(2, '0');
+      const startHour = String(start.getHours()).padStart(2, '0');
+      const startMin = String(start.getMinutes()).padStart(2, '0');
+
+      const endYear = end.getFullYear();
+      const endMonth = String(end.getMonth() + 1).padStart(2, '0');
+      const endDate = String(end.getDate()).padStart(2, '0');
+      const endHour = String(end.getHours()).padStart(2, '0');
+      const endMin = String(end.getMinutes()).padStart(2, '0');
+
+      const normalizedStart = `${startYear}-${startMonth}-${startDate}T${startHour}:${startMin}`;
+      const normalizedEnd = `${endYear}-${endMonth}-${endDate}T${endHour}:${endMin}`;
+
+      const key = `${b.subjectId}_${normalizedStart}_${normalizedEnd}`;
       let group = keyMap.get(key);
       if (!group) {
         group = {
