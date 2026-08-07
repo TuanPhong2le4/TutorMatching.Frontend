@@ -167,7 +167,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
       }, 1500);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || 'Có lỗi xảy ra khi đặt lịch học. Vui lòng thử lại.');
+      setErrorMsg(
+        err.response?.data?.messages?.[0] ||
+        err.response?.data?.message ||
+        'Có lỗi xảy ra khi đặt lịch học. Vui lòng thử lại.'
+      );
       setBookingState('idle');
     }
   };
