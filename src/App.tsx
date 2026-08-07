@@ -636,7 +636,7 @@ export default function App() {
                   gap: '6px'
                 }}>
                 📢 Thông báo Trung tâm
-                {notifications.filter(n => (n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected') && !n.isRead).length > 0 && (
+                {notifications.filter(n => (n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected' || n.type === 'OverdueClassWarning') && !n.isRead).length > 0 && (
                   <span style={{
                     backgroundColor: '#ef4444',
                     color: '#fff',
@@ -648,7 +648,7 @@ export default function App() {
                     display: 'inline-block',
                     boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)'
                   }}>
-                    {notifications.filter(n => (n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected') && !n.isRead).length}
+                    {notifications.filter(n => (n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected' || n.type === 'OverdueClassWarning') && !n.isRead).length}
                   </span>
                 )}
               </button>

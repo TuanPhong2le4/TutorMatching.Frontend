@@ -16,7 +16,7 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
       // Fetch 100 recent notifications and filter for System and TutorApproval ones
       const res = await notificationService.getNotifications(1, 100);
       const systemNotifications = (res.items || []).filter(
-        (n) => n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected'
+        (n) => n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected' || n.type === 'OverdueClassWarning'
       );
       setNotifications(systemNotifications);
     } catch (err) {
@@ -148,7 +148,7 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {notifications.map((n) => {
-            const isWarning = n.title.includes('WARNING') || n.title.includes('Cảnh cáo');
+            const isWarning = n.title.includes('WARNING') || n.title.includes('Cảnh cáo') || n.type === 'OverdueClassWarning';
             const isApproved = n.type === 'TutorApproved';
             const isRejected = n.type === 'TutorRejected';
 
