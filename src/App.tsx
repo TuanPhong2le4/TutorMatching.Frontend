@@ -1672,7 +1672,7 @@ export default function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1300,
+            zIndex: 1500,
             padding: '16px',
           }}
           onClick={() => setCancelBookingId(null)}
@@ -1758,7 +1758,7 @@ export default function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1300,
+            zIndex: 1500,
             padding: '16px',
           }}
           onClick={() => setConfirmBookingId(null)}

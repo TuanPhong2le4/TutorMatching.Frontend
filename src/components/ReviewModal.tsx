@@ -60,7 +60,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1100,
+        zIndex: 1500,
         padding: '16px',
       }}
       onClick={onClose}
