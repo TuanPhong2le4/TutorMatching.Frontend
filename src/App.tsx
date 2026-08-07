@@ -265,6 +265,84 @@ export default function App() {
 
   const isTutorRole = Number(user?.role) === 1 || user?.role === 'Tutor';
 
+  // Grouped Booking state for Tutor multiple student viewer modal
+  const [viewGroupedBooking, setViewGroupedBooking] = useState<any | null>(null);
+
+  // Helper to group bookings with same subject and time slots for tutors
+  const getGroupedBookings = (rawBookings: BookingDto[]): any[] => {
+    if (!isTutorRole) {
+      return rawBookings.map(b => ({
+        id: b.id,
+        subjectId: b.subjectId,
+        subjectName: b.subjectName,
+        scheduledStartAt: b.scheduledStartAt,
+        scheduledEndAt: b.scheduledEndAt,
+        meetingLink: b.meetingLink,
+        status: b.status,
+        creditAmount: b.creditAmount,
+        items: [b]
+      }));
+    }
+
+    const groupsList: any[] = [];
+    const keyMap = new Map<string, any>();
+
+    rawBookings.forEach(b => {
+      const key = `${b.subjectId}_${b.scheduledStartAt}_${b.scheduledEndAt}`;
+      let group = keyMap.get(key);
+      if (!group) {
+        group = {
+          id: b.id,
+          subjectId: b.subjectId,
+          subjectName: b.subjectName,
+          scheduledStartAt: b.scheduledStartAt,
+          scheduledEndAt: b.scheduledEndAt,
+          meetingLink: b.meetingLink,
+          status: b.status,
+          creditAmount: 0,
+          items: []
+        };
+        keyMap.set(key, group);
+        groupsList.push(group);
+      }
+      group.items.push(b);
+      group.creditAmount += b.creditAmount;
+      
+      // Update overall group status
+      // Status: Pending = 0, Confirmed = 1, Completed = 2, Cancelled = 3
+      if (b.status === 1) {
+        group.status = 1;
+      } else if (group.status !== 1 && b.status === 0) {
+        group.status = 0;
+      } else if (group.status !== 1 && group.status !== 0 && b.status === 2) {
+        group.status = 2;
+      }
+      
+      if (b.meetingLink) {
+        group.meetingLink = b.meetingLink;
+      }
+    });
+
+    return groupsList;
+  };
+
+  // Sync modal details when bookings change
+  useEffect(() => {
+    if (viewGroupedBooking) {
+      const grouped = getGroupedBookings(bookings);
+      const match = grouped.find(g => 
+        g.subjectId === viewGroupedBooking.subjectId && 
+        g.scheduledStartAt === viewGroupedBooking.scheduledStartAt && 
+        g.scheduledEndAt === viewGroupedBooking.scheduledEndAt
+      );
+      if (match) {
+        setViewGroupedBooking(match);
+      } else {
+        setViewGroupedBooking(null);
+      }
+    }
+  }, [bookings]);
+
   // Phase 6 real-time notifications states
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -1710,6 +1788,346 @@ export default function App() {
         subjectName={sessionSubjectName}
         onSuccess={fetchBookings}
       />
+
+      {/* Grouped Booking Student Manager Modal */}
+      {viewGroupedBooking && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15,23,42,0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1300,
+            padding: '16px',
+          }}
+          onClick={() => setViewGroupedBooking(null)}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '800px',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ padding: '24px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  👥 Quản Lý Lớp Học Nhóm
+                </h3>
+                <div style={{ fontSize: '15px', color: '#38bdf8', fontWeight: 600, marginTop: '4px' }}>
+                  {viewGroupedBooking.subjectName}
+                </div>
+                <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', display: 'flex', gap: '12px' }}>
+                  <span>📅 {new Date(viewGroupedBooking.scheduledStartAt).toLocaleDateString('vi-VN')}</span>
+                  <span>⏰ {new Date(viewGroupedBooking.scheduledStartAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - {new Date(viewGroupedBooking.scheduledEndAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewGroupedBooking(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  lineHeight: 1
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <span style={{ fontSize: '14px', color: '#cbd5e1', fontWeight: 600 }}>
+                  Danh sách học viên ({viewGroupedBooking.items.length})
+                </span>
+                <span style={{ fontSize: '13px', color: '#a855f7', fontWeight: 700 }}>
+                  Tổng doanh thu lớp: 💎 {viewGroupedBooking.creditAmount}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {viewGroupedBooking.items.map((item: any) => {
+                  const itemStart = new Date(item.scheduledStartAt);
+                  const itemIsStarted = new Date() >= itemStart;
+
+                  let itemStatusText = 'Chờ duyệt';
+                  let itemStatusStyle = { color: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.15)' };
+                  if (item.status === 1) {
+                    itemStatusText = 'Đã xác nhận';
+                    itemStatusStyle = { color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)' };
+                  } else if (item.status === 2) {
+                    itemStatusText = 'Hoàn thành';
+                    itemStatusStyle = { color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)' };
+                  } else if (item.status === 3) {
+                    itemStatusText = 'Đã hủy';
+                    itemStatusStyle = { color: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.15)' };
+                  } else if (item.status === 4) {
+                    itemStatusText = 'Đổi lịch';
+                    itemStatusStyle = { color: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.15)' };
+                  }
+
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '12px',
+                        backgroundColor: 'rgba(30, 41, 59, 0.4)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px'
+                      }}
+                    >
+                      {/* Student info and details */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div
+                            style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: '50%',
+                              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                              color: '#38bdf8',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              fontSize: '16px'
+                            }}
+                          >
+                            {item.studentName ? item.studentName.charAt(0).toUpperCase() : 'S'}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, color: '#fff', fontSize: '15px' }}>{item.studentName}</div>
+                            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <span>Học phí: <strong style={{ color: '#a855f7' }}>💎 {item.creditAmount}</strong></span>
+                              <span>•</span>
+                              <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 600, ...itemStatusStyle }}>
+                                {itemStatusText}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Meeting link status info */}
+                        {item.meetingLink && (
+                          <div style={{ fontSize: '12px', color: '#38bdf8' }}>
+                            🔗 Link: <a href={item.meetingLink.startsWith('http') ? item.meetingLink : `https://${item.meetingLink}`} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>{item.meetingLink}</a>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Student Review display (if completed) */}
+                      {item.status === 2 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {item.isStudentReviewed && (
+                            <div style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.15)', fontSize: '11px' }}>
+                              <span style={{ fontWeight: 600, color: '#38bdf8' }}>🎓 Học viên đánh giá:</span>{' '}
+                              <span style={{ color: '#fbbf24' }}>{'★'.repeat(item.studentRating || 5)}</span>
+                              <div style={{ color: '#cbd5e1', fontStyle: 'italic', marginTop: '2px' }}>"{item.studentComment || 'Không có nhận xét viết tay'}"</div>
+                            </div>
+                          )}
+                          {item.isTutorReviewed && (
+                            <div style={{ padding: '8px 12px', borderRadius: '8px', backgroundColor: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.1)', fontSize: '11px' }}>
+                              <span style={{ fontWeight: 600, color: '#c084fc' }}>👨‍🏫 Bạn đã đánh giá:</span>{' '}
+                              <span style={{ color: '#fbbf24' }}>{'★'.repeat(item.tutorRating || 5)}</span>
+                              <div style={{ color: '#cbd5e1', fontStyle: 'italic', marginTop: '2px' }}>"{item.tutorComment || 'Không có nhận xét viết tay'}"</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Student individual Action Buttons */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '10px', justifyContent: 'flex-end' }}>
+                        {item.status === 0 && (
+                          <>
+                            <button
+                              onClick={() => setConfirmBookingId(item.id)}
+                              style={{
+                                padding: '5px 12px',
+                                backgroundColor: '#10b981',
+                                border: 'none',
+                                color: '#fff',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ✔️ Xác Nhận
+                            </button>
+                            <button
+                              onClick={() => setCancelBookingId(item.id)}
+                              style={{
+                                padding: '5px 12px',
+                                backgroundColor: 'rgba(239,68,68,0.15)',
+                                border: '1px solid rgba(239,68,68,0.3)',
+                                color: '#f87171',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ❌ Từ Chối
+                            </button>
+                          </>
+                        )}
+
+                        {item.status === 1 && (
+                          <>
+                            <button
+                              disabled={!itemIsStarted}
+                              onClick={() => handleCompleteBooking(item.id)}
+                              style={{
+                                padding: '5px 12px',
+                                backgroundColor: itemIsStarted ? '#a855f7' : 'rgba(168, 85, 247, 0.4)',
+                                border: 'none',
+                                color: itemIsStarted ? '#fff' : '#cbd5e1',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                cursor: itemIsStarted ? 'pointer' : 'not-allowed',
+                              }}
+                              title={!itemIsStarted ? "Không thể hoàn thành khi buổi học chưa diễn ra" : undefined}
+                            >
+                              🎓 Hoàn Thành
+                            </button>
+                            <button
+                              onClick={() => {
+                                const newLink = prompt('Nhập link meeting mới:', item.meetingLink || '');
+                                if (newLink !== null) handleUpdateMeetingLink(item.id, newLink);
+                              }}
+                              style={{
+                                padding: '5px 12px',
+                                backgroundColor: 'transparent',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                color: '#cbd5e1',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              🔗 Đổi Link
+                            </button>
+                            <button
+                              onClick={() => setCancelBookingId(item.id)}
+                              style={{
+                                padding: '5px 12px',
+                                backgroundColor: 'rgba(239,68,68,0.15)',
+                                border: '1px solid rgba(239,68,68,0.3)',
+                                color: '#f87171',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ❌ Hủy Lịch
+                            </button>
+                          </>
+                        )}
+
+                        {item.status === 2 && (
+                          <>
+                            {!itemIsStarted ? (
+                              <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>⏰ Chưa đến giờ học</span>
+                            ) : (
+                              <>
+                                {!item.isTutorReviewed && (
+                                  <button
+                                    onClick={() => {
+                                      setReviewBookingId(item.id);
+                                      setReviewTutorName(item.studentName);
+                                      setReviewSubjectName(item.subjectName);
+                                    }}
+                                    style={{
+                                      padding: '5px 12px',
+                                      backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                                      border: '1px solid rgba(168, 85, 247, 0.3)',
+                                      color: '#c084fc',
+                                      borderRadius: '6px',
+                                      fontSize: '12px',
+                                      cursor: 'pointer',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    ✍️ Đánh Giá
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setSessionRecordBookingId(item.id);
+                                    setSessionStudentName(item.studentName);
+                                    setSessionSubjectName(item.subjectName);
+                                  }}
+                                  style={{
+                                    padding: '5px 12px',
+                                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                                    color: '#38bdf8',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  📝 Báo Cáo Buổi Học
+                                </button>
+                              </>
+                            )}
+                          </>
+                        )}
+                        {item.status === 3 && (
+                          <span style={{ fontSize: '12px', color: '#f87171' }}>Lịch học đã hủy</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', backgroundColor: 'rgba(15,23,42,0.2)' }}>
+              <button
+                onClick={() => setViewGroupedBooking(null)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  backgroundColor: 'transparent',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600
+                }}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Container (Phase 6 Real-time alerts) */}
       <ToastContainer toasts={toasts} onRemove={handleRemoveToast} />
