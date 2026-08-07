@@ -166,12 +166,28 @@ export const BookingModal: React.FC<BookingModalProps> = ({ tutor, isOpen, onClo
         onBookingSuccess();
       }, 1500);
     } catch (err: any) {
-      console.error(err);
-      setErrorMsg(
-        err.response?.data?.messages?.[0] ||
-        err.response?.data?.message ||
-        'Có lỗi xảy ra khi đặt lịch học. Vui lòng thử lại.'
-      );
+      console.error('Booking error:', err);
+      
+      // Extract error message from all possible ApiResponse shapes
+      const responseData = err?.response?.data;
+      const serverMsg =
+        // ApiResponse<T>.Messages array (standard backend format)
+        (Array.isArray(responseData?.messages) && responseData.messages.length > 0
+          ? responseData.messages[0]
+          : null) ||
+        // Fallback single-field message
+        responseData?.message ||
+        responseData?.title ||
+        // Network / timeout errors
+        (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')
+          ? 'Yêu cầu hết thời gian chờ. Vui lòng kiểm tra kết nối mạng.'
+          : null) ||
+        (err?.request && !err?.response
+          ? 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.'
+          : null) ||
+        'Có lỗi xảy ra khi đặt lịch học. Vui lòng thử lại.';
+
+      setErrorMsg(serverMsg);
       setBookingState('idle');
     }
   };
