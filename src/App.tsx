@@ -589,7 +589,7 @@ export default function App() {
       fetchBookings();
       fetchWalletBalance();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể hủy lịch học. Vui lòng thử lại.');
+      alert(err.response?.data?.messages?.[0] || err.response?.data?.message || 'Không thể hủy lịch học. Vui lòng thử lại.');
     } finally {
       setSubmittingAction(false);
     }
@@ -608,7 +608,7 @@ export default function App() {
       fetchBookings();
       fetchWalletBalance();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể xác nhận lịch học. Vui lòng thử lại.');
+      alert(err.response?.data?.messages?.[0] || err.response?.data?.message || 'Không thể xác nhận lịch học. Vui lòng thử lại.');
     } finally {
       setSubmittingAction(false);
     }
@@ -622,7 +622,7 @@ export default function App() {
       setTimeout(() => setBookingNotice(null), 5000);
       fetchBookings();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể cập nhật link. Vui lòng thử lại.');
+      alert(err.response?.data?.messages?.[0] || err.response?.data?.message || 'Không thể cập nhật link. Vui lòng thử lại.');
     }
   };
 
@@ -635,7 +635,7 @@ export default function App() {
       fetchBookings();
       fetchWalletBalance();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra.');
+      alert(err.response?.data?.messages?.[0] || err.response?.data?.message || 'Có lỗi xảy ra.');
     }
   };
 
