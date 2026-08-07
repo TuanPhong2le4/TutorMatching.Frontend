@@ -13,10 +13,10 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
   const fetchCenterNotifications = async () => {
     try {
       setLoading(true);
-      // Fetch 100 recent notifications and filter for System ones
+      // Fetch 100 recent notifications and filter for System and TutorApproval ones
       const res = await notificationService.getNotifications(1, 100);
       const systemNotifications = (res.items || []).filter(
-        (n) => n.type === 'System'
+        (n) => n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected'
       );
       setNotifications(systemNotifications);
     } catch (err) {
@@ -149,6 +149,34 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {notifications.map((n) => {
             const isWarning = n.title.includes('WARNING') || n.title.includes('Cảnh cáo');
+            const isApproved = n.type === 'TutorApproved';
+            const isRejected = n.type === 'TutorRejected';
+
+            let icon = '📢';
+            let iconColor = '#38bdf8';
+            let iconBg = 'rgba(56, 189, 248, 0.1)';
+            let borderColor = 'rgba(255,255,255,0.06)';
+            let itemBg = 'rgba(15, 23, 42, 0.4)';
+
+            if (isApproved) {
+              icon = '✅';
+              iconColor = '#10b981';
+              iconBg = 'rgba(16, 185, 129, 0.15)';
+              borderColor = 'rgba(16, 185, 129, 0.2)';
+              itemBg = 'rgba(16, 185, 129, 0.05)';
+            } else if (isRejected) {
+              icon = '❌';
+              iconColor = '#ef4444';
+              iconBg = 'rgba(239, 68, 68, 0.15)';
+              borderColor = 'rgba(239, 68, 68, 0.2)';
+              itemBg = 'rgba(239, 68, 68, 0.05)';
+            } else if (isWarning) {
+              icon = '⚠️';
+              iconColor = '#ef4444';
+              iconBg = 'rgba(239, 68, 68, 0.15)';
+              borderColor = 'rgba(239, 68, 68, 0.2)';
+              itemBg = 'rgba(239, 68, 68, 0.05)';
+            }
 
             return (
               <div
@@ -157,25 +185,22 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
                 style={{
                   padding: '18px',
                   borderRadius: '12px',
-                  border: isWarning
-                    ? '1px solid rgba(239, 68, 68, 0.2)'
-                    : '1px solid rgba(255,255,255,0.06)',
-                  backgroundColor: isWarning
-                    ? 'rgba(239, 68, 68, 0.05)'
-                    : 'rgba(15, 23, 42, 0.4)',
+                  border: borderColor,
+                  backgroundColor: itemBg,
                   position: 'relative',
                   cursor: n.isRead ? 'default' : 'pointer',
                   transition: 'transform 0.2s, background-color 0.2s',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-1px)';
-                  if (isWarning) e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+                  if (isApproved) e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.08)';
+                  else if (isRejected) e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+                  else if (isWarning) e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
                   else e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.6)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  if (isWarning) e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
-                  else e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.4)';
+                  e.currentTarget.style.backgroundColor = itemBg;
                 }}
               >
                 {/* Dot for unread */}
@@ -203,13 +228,11 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
                       fontSize: '22px',
                       padding: '8px',
                       borderRadius: '10px',
-                      backgroundColor: isWarning
-                        ? 'rgba(239, 68, 68, 0.15)'
-                        : 'rgba(56, 189, 248, 0.1)',
-                      color: isWarning ? '#ef4444' : '#38bdf8',
+                      backgroundColor: iconBg,
+                      color: iconColor,
                     }}
                   >
-                    {isWarning ? '⚠️' : '📢'}
+                    {icon}
                   </div>
 
                   <div style={{ flex: 1 }}>
@@ -228,7 +251,7 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
                           margin: 0,
                           fontSize: '15px',
                           fontWeight: 600,
-                          color: isWarning ? '#f87171' : '#fff',
+                          color: isApproved ? '#34d399' : (isRejected || isWarning) ? '#f87171' : '#fff',
                         }}
                       >
                         {n.title}

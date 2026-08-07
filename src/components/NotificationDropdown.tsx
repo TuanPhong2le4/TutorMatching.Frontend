@@ -69,6 +69,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return { icon: '⭐', color: '#fbbf24', tab: 'bookings' };
       case 'CreditChanged':
         return { icon: '💰', color: '#34d399', tab: 'wallet' };
+      case 'TutorApproved':
+        return { icon: '✅', color: '#10b981', tab: 'center-notifications' };
+      case 'TutorRejected':
+        return { icon: '❌', color: '#f87171', tab: 'center-notifications' };
+      case 'TutorApprovalRequest':
+        return { icon: '📝', color: '#fbbf24', tab: 'admin-tutors' };
       case 'System':
         // Deposit request notifications for admin
         if (relatedEntityType === 'DepositRequest' || (title && title.includes('nạp tiền'))) {
