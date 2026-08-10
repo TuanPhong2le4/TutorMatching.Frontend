@@ -102,8 +102,8 @@ export const LearningProgressDashboard: React.FC = () => {
         setChartData(null);
       }
 
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
+    } catch {
+      // Safe fallback
     } finally {
       setLoading(false);
     }
@@ -140,7 +140,9 @@ export const LearningProgressDashboard: React.FC = () => {
       resetForm();
       loadDashboardData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi tạo mục tiêu học tập.');
+      const targetDateError = err.response?.data?.errors?.TargetDate?.[0];
+      const generalError = err.response?.data?.message || err.response?.data?.title;
+      alert(targetDateError || generalError || 'Lỗi khi tạo mục tiêu học tập. Vui lòng chọn Hạn chót từ ngày hôm nay trở đi.');
     }
   };
 
@@ -559,7 +561,8 @@ export const LearningProgressDashboard: React.FC = () => {
             renderSVGChart()
           ) : (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-              Select a Subject from the dropdown at the top to load visual metrics and score charts.
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>📈</div>
+              Vui lòng chọn một Môn học từ danh sách phía trên để xem biểu đồ xu hướng và phân tích điểm số.
             </div>
           )}
         </div>
@@ -691,6 +694,7 @@ export const LearningProgressDashboard: React.FC = () => {
                 </label>
                 <input
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={newTargetDate}
                   onChange={(e) => setNewTargetDate(e.target.value)}
                   style={{
@@ -810,6 +814,7 @@ export const LearningProgressDashboard: React.FC = () => {
                 </label>
                 <input
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={newTargetDate}
                   onChange={(e) => setNewTargetDate(e.target.value)}
                   style={{

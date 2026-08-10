@@ -33,7 +33,25 @@ import { NotificationDropdown } from './components/NotificationDropdown';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
+<<<<<<< HEAD
   const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'admin-revenue' | 'center-notifications'>('home');
+=======
+  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'admin-revenue' | 'admin-subjects' | 'center-notifications'>('home');
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(['home']));
+
+  useEffect(() => {
+    setVisitedTabs(new Set(['home']));
+  }, [user?.id, isAuthenticated]);
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
+>>>>>>> beba9e2 (feat: preserve uncommitted changes before feature branching)
 
   // Role-based active tab guards during render to prevent stale/unauthorized tab mounts
   const roleNum = Number(user?.role);
@@ -513,7 +531,7 @@ export default function App() {
 
   const fetchTutors = async () => {
     try {
-      setLoading(true);
+      if (tutors.length === 0) setLoading(true);
       const res = await tutorService.searchTutors({
         searchTerm: searchTerm || undefined,
         subjectId: selectedSubjectId || undefined,
@@ -526,8 +544,8 @@ export default function App() {
       setTutors(res.items || []);
       setTotalPages(Math.ceil((res.totalCount || 0) / 6));
       setTotalCount(res.totalCount || 0);
-    } catch (err) {
-      console.error('Failed to fetch tutors from API:', err);
+    } catch {
+      // Safe fallback
     } finally {
       setLoading(false);
     }
@@ -543,13 +561,13 @@ export default function App() {
 
   const fetchBookings = async () => {
     try {
-      setBookingsLoading(true);
+      if (bookings.length === 0) setBookingsLoading(true);
       const res = await bookingService.getMyBookings(bookingsPage, 10);
       setBookings(res.items || []);
       setBookingsTotalCount(res.totalCount || 0);
       setBookingsTotalPages(Math.ceil((res.totalCount || 0) / 10));
-    } catch (err) {
-      console.error('Failed to load bookings:', err);
+    } catch {
+      // Safe fallback
     } finally {
       setBookingsLoading(false);
     }
@@ -862,8 +880,8 @@ export default function App() {
       {/* Main Content Area */}
       <main style={{ flex: 1, padding: '16px 24px 48px', maxWidth: '1240px', margin: '0 auto', width: '100%' }}>
         {/* Tab 1: Home Page */}
-        {activeTab === 'home' && (
-          <div>
+        {visitedTabs.has('home') && (
+          <div style={{ display: activeTab === 'home' ? 'block' : 'none' }}>
             {isAdmin ? (
               <AdminDashboard />
             ) : (
@@ -1013,8 +1031,8 @@ export default function App() {
         )}
 
         {/* Tab 2: Phase 2 Tutor Search & Catalog */}
-        {activeTab === 'tutors' && (
-          <div>
+        {visitedTabs.has('tutors') && (
+          <div style={{ display: activeTab === 'tutors' ? 'block' : 'none' }}>
             <div style={{ marginBottom: '24px' }}>
               <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>
                 🔍 Tìm Kiếm & Khám Phá Gia Sư
@@ -1144,8 +1162,8 @@ export default function App() {
         )}
 
         {/* Tab 3: Bookings & Availability Management */}
-        {activeTab === 'bookings' && (
-          <div>
+        {visitedTabs.has('bookings') && (
+          <div style={{ display: activeTab === 'bookings' ? 'block' : 'none' }}>
             <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '4px' }}>
@@ -1313,6 +1331,25 @@ export default function App() {
                                   <span style={{ display: 'inline-block', whiteSpace: 'nowrap', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600, ...statusStyle }}>
                                     {statusText}
                                   </span>
+                                  {grp.status === 3 && singleItem.cancellationReason && (
+                                    <div
+                                      style={{
+                                        marginTop: '6px',
+                                        fontSize: '11px',
+                                        color: '#fca5a5',
+                                        maxWidth: '220px',
+                                        lineHeight: '1.4',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        padding: '4px 8px',
+                                        borderRadius: '6px',
+                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        wordBreak: 'break-word',
+                                      }}
+                                      title={singleItem.cancellationReason}
+                                    >
+                                      💬 <em>Lý do: "{singleItem.cancellationReason}"</em>
+                                    </div>
+                                  )}
                                 </td>
                                 <td style={{ padding: '16px' }}>
                                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -1359,7 +1396,7 @@ export default function App() {
                                         )}
 
                                         {/* Student Cancel */}
-                                        {!isTutorRole && (singleItem.status === 0 || singleItem.status === 1) && (
+                                        {!isTutorRole && !isAdmin && (singleItem.status === 0 || singleItem.status === 1) && (
                                           <button
                                             onClick={() => setCancelBookingId(singleItem.id)}
                                             style={{
@@ -1602,38 +1639,64 @@ export default function App() {
         )}
 
         {/* Tab 4: Wallet Dashboard */}
-        {activeTab === 'wallet' && (
-          <WalletDashboard balance={walletBalance} onBalanceChanged={setWalletBalance} />
+        {visitedTabs.has('wallet') && (
+          <div style={{ display: activeTab === 'wallet' ? 'block' : 'none' }}>
+            <WalletDashboard balance={walletBalance} onBalanceChanged={setWalletBalance} />
+          </div>
         )}
 
         {/* Tab 5: Learning Progress Dashboard */}
-        {activeTab === 'progress' && (
-          <LearningProgressDashboard />
+        {!isAdmin && visitedTabs.has('progress') && (
+          <div style={{ display: activeTab === 'progress' ? 'block' : 'none' }}>
+            <LearningProgressDashboard />
+          </div>
         )}
 
         {/* Tab 6: Admin Reviews Dashboard */}
-        {activeTab === 'admin-reviews' && (
-          <AdminReviewsDashboard />
+        {isAdmin && visitedTabs.has('admin-reviews') && (
+          <div style={{ display: activeTab === 'admin-reviews' ? 'block' : 'none' }}>
+            <AdminReviewsDashboard />
+          </div>
         )}
 
         {/* Tab 8: Admin User Management */}
+<<<<<<< HEAD
         {activeTab === 'admin-users' && (
           <AdminUserManagement />
+=======
+        {isAdmin && visitedTabs.has('admin-users') && (
+          <div style={{ display: activeTab === 'admin-users' ? 'block' : 'none' }}>
+            <AdminUserManagement initialSubTab={adminUserSubTab} />
+          </div>
+        )}
+
+        {/* Tab 8.2: Admin Subject Management */}
+        {isAdmin && visitedTabs.has('admin-subjects') && (
+          <div style={{ display: activeTab === 'admin-subjects' ? 'block' : 'none' }}>
+            <AdminSubjectManagement />
+          </div>
+>>>>>>> beba9e2 (feat: preserve uncommitted changes before feature branching)
         )}
 
         {/* Tab 8.5: Admin Tutor Approval */}
-        {activeTab === 'admin-tutors' && (
-          <AdminTutorApproval />
+        {isAdmin && visitedTabs.has('admin-tutors') && (
+          <div style={{ display: activeTab === 'admin-tutors' ? 'block' : 'none' }}>
+            <AdminTutorApproval />
+          </div>
         )}
 
         {/* Tab 8.6: Admin Revenue Dashboard */}
-        {activeTab === 'admin-revenue' && (
-          <AdminRevenueDashboard />
+        {isAdmin && visitedTabs.has('admin-revenue') && (
+          <div style={{ display: activeTab === 'admin-revenue' ? 'block' : 'none' }}>
+            <AdminRevenueDashboard />
+          </div>
         )}
 
         {/* Tab 9: Center Notifications */}
-        {activeTab === 'center-notifications' && (
-          <CenterNotifications onNotificationsUpdated={fetchNotifications} />
+        {!isAdmin && visitedTabs.has('center-notifications') && (
+          <div style={{ display: activeTab === 'center-notifications' ? 'block' : 'none' }}>
+            <CenterNotifications onNotificationsUpdated={fetchNotifications} />
+          </div>
         )}
       </main>
 

@@ -65,8 +65,8 @@ export const AdminUserManagement: React.FC = () => {
       });
       setStudents(res.items || []);
       setStudentsTotalCount(res.totalCount || 0);
-    } catch (err) {
-      console.error('Failed to fetch students:', err);
+    } catch {
+      setStudents([]);
     } finally {
       setStudentsLoading(false);
     }
@@ -85,8 +85,8 @@ export const AdminUserManagement: React.FC = () => {
       });
       setTutors(res.items || []);
       setTutorsTotalCount(res.totalCount || 0);
-    } catch (err) {
-      console.error('Failed to fetch tutors:', err);
+    } catch {
+      setTutors([]);
     } finally {
       setTutorsLoading(false);
     }
