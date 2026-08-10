@@ -64,10 +64,14 @@ export interface CreateSessionRecordRequest {
 
 export const progressService = {
   async getLearningGoals(studentId?: string, subjectId?: string): Promise<LearningGoalDto[]> {
-    const res = await api.get<{ data: LearningGoalDto[] }>('/Progress/goals', {
-      params: { studentId, subjectId }
-    });
-    return res.data.data;
+    try {
+      const res = await api.get<{ data: LearningGoalDto[] }>('/Progress/goals', {
+        params: { studentId, subjectId }
+      });
+      return res.data.data || [];
+    } catch {
+      return [];
+    }
   },
 
   async createLearningGoal(data: CreateLearningGoalRequest): Promise<string> {
@@ -85,11 +89,15 @@ export const progressService = {
     return res.data.data;
   },
 
-  async getProgressChartData(subjectId: string, studentId?: string): Promise<ProgressChartDto> {
-    const res = await api.get<{ data: ProgressChartDto }>('/Progress/chart-data', {
-      params: { subjectId, studentId }
-    });
-    return res.data.data;
+  async getProgressChartData(subjectId: string, studentId?: string): Promise<ProgressChartDto | null> {
+    try {
+      const res = await api.get<{ data: ProgressChartDto }>('/Progress/chart-data', {
+        params: { subjectId, studentId }
+      });
+      return res.data.data;
+    } catch {
+      return null;
+    }
   },
 
   async createSessionRecord(bookingId: string, data: CreateSessionRecordRequest): Promise<string> {
