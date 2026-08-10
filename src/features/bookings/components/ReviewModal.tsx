@@ -41,7 +41,8 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Có lỗi xảy ra khi gửi đánh giá.');
+      const msg = err.response?.data?.messages?.[0] || err.response?.data?.message || err.response?.data?.title || 'Có lỗi xảy ra khi gửi đánh giá.';
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
