@@ -339,9 +339,10 @@ export default function App() {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    // Connect to /hubs/notifications hub, passing token in query string
+    // Connect directly to Azure backend hub for native WebSocket support
+    const hubUrl = (import.meta as any).env?.VITE_HUB_URL || 'https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net/hubs/notifications';
     const connection = new HubConnectionBuilder()
-      .withUrl('/hubs/notifications', {
+      .withUrl(hubUrl, {
         accessTokenFactory: () => token,
       })
       .withAutomaticReconnect()
