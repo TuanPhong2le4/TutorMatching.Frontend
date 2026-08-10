@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../auth/context/AuthContext';
 import { progressService, LearningGoalDto, ProgressChartDto } from '../services/progressService';
 import { bookingService, BookingDto } from '../../bookings/services/bookingService';
@@ -10,10 +10,10 @@ export const LearningProgressDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   
-  // Tutor Specific states
+  // Bookings & Student states
+  const [allBookings, setAllBookings] = useState<BookingDto[]>([]);
   const [students, setStudents] = useState<{ id: string; name: string }[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
-  const [mySubjects, setMySubjects] = useState<{ id: string; name: string }[]>([]);
   
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
@@ -33,93 +33,151 @@ export const LearningProgressDashboard: React.FC = () => {
   const isTutor = Number(user?.role) === 1 || user?.role === 'Tutor';
   const isStudent = Number(user?.role) === 2 || user?.role === 'Student';
 
+  // Only valid bookings (Confirmed = 1 or Completed = 2) for progress relationships
+  const validBookings = useMemo(() => {
+    return allBookings.filter(b => b.status === 1 || b.status === 2);
+  }, [allBookings]);
+
+  // Subjects available for currently selected student (if Tutor) or user (if Student)
+  const availableSubjects = useMemo(() => {
+    const subjectMap = new Map<string, string>();
+    const filtered = isTutor
+      ? validBookings.filter(b => b.studentId === selectedStudentId)
+      : validBookings;
+
+    filtered.forEach(b => {
+      if (b.subjectId && b.subjectName) {
+        subjectMap.set(b.subjectId, b.subjectName);
+      }
+    });
+
+    return Array.from(subjectMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [validBookings, isTutor, selectedStudentId]);
+
+  // Subjects available for selected student in Create Goal Modal
+  const modalSubjects = useMemo(() => {
+    const subjectMap = new Map<string, string>();
+    const filtered = validBookings.filter(b => b.studentId === newStudentId);
+    filtered.forEach(b => {
+      if (b.subjectId && b.subjectName) {
+        subjectMap.set(b.subjectId, b.subjectName);
+      }
+    });
+    return Array.from(subjectMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [validBookings, newStudentId]);
+
+  // Load Bookings once on mount / user change
   useEffect(() => {
+    loadBookings();
+  }, [user]);
+
+  const loadBookings = async () => {
+    try {
+      setLoading(true);
+      const bookingsRes = await bookingService.getMyBookings(1, 100);
+      const items = bookingsRes?.items || [];
+      setAllBookings(items);
+
+      const valid = items.filter((b: BookingDto) => b.status === 1 || b.status === 2);
+
+      if (isTutor) {
+        const studentMap = new Map<string, string>();
+        valid.forEach(b => {
+          if (b.studentId && b.studentName) {
+            studentMap.set(b.studentId, b.studentName);
+          }
+        });
+        const studentList = Array.from(studentMap.entries()).map(([id, name]) => ({ id, name }));
+        setStudents(studentList);
+
+        if (studentList.length > 0) {
+          const firstStId = studentList[0].id;
+          setSelectedStudentId(firstStId);
+
+          const firstStSubjects = valid.filter(b => b.studentId === firstStId && b.subjectId && b.subjectName);
+          if (firstStSubjects.length > 0) {
+            setSelectedSubjectId(firstStSubjects[0].subjectId);
+          } else {
+            setSelectedSubjectId('');
+          }
+        } else {
+          setSelectedStudentId('');
+          setSelectedSubjectId('');
+        }
+      } else if (isStudent) {
+        const subjectMap = new Map<string, string>();
+        valid.forEach(b => {
+          if (b.subjectId && b.subjectName) {
+            subjectMap.set(b.subjectId, b.subjectName);
+          }
+        });
+        const subjectList = Array.from(subjectMap.entries()).map(([id, name]) => ({ id, name }));
+        if (subjectList.length > 0) {
+          setSelectedSubjectId(subjectList[0].id);
+        } else {
+          setSelectedSubjectId('');
+        }
+      }
+    } catch {
+      // Safe fallback
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load Goals and Chart Data whenever selection changes
+  useEffect(() => {
+    if (isTutor && (!selectedStudentId || !selectedSubjectId)) {
+      setGoals([]);
+      setChartData(null);
+      return;
+    }
+    if (isStudent && !selectedSubjectId) {
+      setGoals([]);
+      setChartData(null);
+      return;
+    }
+
     loadDashboardData();
   }, [selectedStudentId, selectedSubjectId]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      
-      let currentStudentId = selectedStudentId;
-      let currentSubjectId = selectedSubjectId;
-
-      // Load active students & subjects from bookings
-      if (mySubjects.length === 0) {
-        const bookingsRes = await bookingService.getMyBookings(1, 100);
-        const uniqueStudentsMap = new Map<string, string>();
-        const uniqueSubjectsMap = new Map<string, string>();
-        
-        bookingsRes.items?.forEach((b: BookingDto) => {
-          if (b.subjectId && b.subjectName) {
-            uniqueSubjectsMap.set(b.subjectId, b.subjectName);
-          }
-          if (isTutor && b.studentId && b.studentName) {
-            uniqueStudentsMap.set(b.studentId, b.studentName);
-          }
-        });
-        
-        const loadedSubjects = Array.from(uniqueSubjectsMap.entries()).map(([id, name]) => ({ id, name }));
-        setMySubjects(loadedSubjects);
-
-        if (loadedSubjects.length > 0 && !currentSubjectId) {
-          currentSubjectId = loadedSubjects[0].id;
-          setSelectedSubjectId(currentSubjectId);
-        }
-
-        if (isTutor) {
-          const loadedStudents = Array.from(uniqueStudentsMap.entries()).map(([id, name]) => ({ id, name }));
-          setStudents(loadedStudents);
-          if (loadedStudents.length > 0 && !currentStudentId) {
-            currentStudentId = loadedStudents[0].id;
-            setSelectedStudentId(currentStudentId);
-          }
-        }
-      }
-
-      // If tutor and no student is selected yet, we cannot query goals
-      if (isTutor && !currentStudentId) {
-        setGoals([]);
-        setChartData(null);
-        return;
-      }
 
       // Fetch goals
       const goalsList = await progressService.getLearningGoals(
-        isTutor ? currentStudentId : undefined,
-        currentSubjectId || undefined
+        isTutor ? selectedStudentId : undefined,
+        selectedSubjectId || undefined
       );
       setGoals(goalsList || []);
 
       // Fetch chart
-      if (isStudent && currentSubjectId) {
-        const chart = await progressService.getProgressChartData(currentSubjectId);
+      if (isStudent && selectedSubjectId) {
+        const chart = await progressService.getProgressChartData(selectedSubjectId);
         setChartData(chart);
-      } else if (isTutor && currentStudentId && currentSubjectId) {
-        const chart = await progressService.getProgressChartData(currentSubjectId, currentStudentId);
+      } else if (isTutor && selectedStudentId && selectedSubjectId) {
+        const chart = await progressService.getProgressChartData(selectedSubjectId, selectedStudentId);
         setChartData(chart);
       } else {
         setChartData(null);
       }
-
-    } catch (err) {
-      console.error('Failed to load dashboard data:', err);
+    } catch {
+      // Safe fallback
     } finally {
       setLoading(false);
     }
   };
 
-  // Extract unique subjects from goals to filter
-  const uniqueSubjects = React.useMemo(() => {
-    const map = new Map<string, string>();
-    goals.forEach(g => {
-      // Since LearningGoalDto doesn't have subjectName, we map dynamically if possible, or display IDs,
-      // but let's query the subject name or map it.
-      // We can also extract subjects from mySubjects if Tutor.
-      map.set(g.subjectId, 'Môn học');
-    });
-    return Array.from(map.keys());
-  }, [goals]);
+  const handleStudentChange = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    const studentSubjects = validBookings.filter(b => b.studentId === studentId && b.subjectId && b.subjectName);
+    if (studentSubjects.length > 0) {
+      setSelectedSubjectId(studentSubjects[0].subjectId);
+    } else {
+      setSelectedSubjectId('');
+    }
+  };
 
   const handleCreateGoal = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +198,9 @@ export const LearningProgressDashboard: React.FC = () => {
       resetForm();
       loadDashboardData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi tạo mục tiêu học tập.');
+      const targetDateError = err.response?.data?.errors?.TargetDate?.[0];
+      const generalError = err.response?.data?.message || err.response?.data?.title;
+      alert(targetDateError || generalError || 'Lỗi khi tạo mục tiêu học tập. Vui lòng chọn Hạn chót từ ngày hôm nay trở đi.');
     }
   };
 
@@ -184,9 +244,24 @@ export const LearningProgressDashboard: React.FC = () => {
 
   const openCreateModal = () => {
     resetForm();
-    if (students.length > 0) setNewStudentId(students[0].id);
-    if (mySubjects.length > 0) setNewSubjectId(mySubjects[0].id);
+    const defaultStudentId = selectedStudentId || (students.length > 0 ? students[0].id : '');
+    setNewStudentId(defaultStudentId);
+
+    const studentSubjects = validBookings.filter(b => b.studentId === defaultStudentId && b.subjectId && b.subjectName);
+    if (studentSubjects.length > 0) {
+      setNewSubjectId(studentSubjects[0].subjectId);
+    }
     setIsCreateOpen(true);
+  };
+
+  const handleModalStudentChange = (studentId: string) => {
+    setNewStudentId(studentId);
+    const studentSubjects = validBookings.filter(b => b.studentId === studentId && b.subjectId && b.subjectName);
+    if (studentSubjects.length > 0) {
+      setNewSubjectId(studentSubjects[0].subjectId);
+    } else {
+      setNewSubjectId('');
+    }
   };
 
   const openUpdateModal = (goal: LearningGoalDto) => {
@@ -376,7 +451,7 @@ export const LearningProgressDashboard: React.FC = () => {
               </label>
               <select
                 value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
+                onChange={(e) => handleStudentChange(e.target.value)}
                 style={{
                   padding: '8px 12px',
                   borderRadius: '8px',
@@ -387,7 +462,7 @@ export const LearningProgressDashboard: React.FC = () => {
                   outline: 'none',
                 }}
               >
-                <option value="">-- Tất cả học viên --</option>
+                {students.length === 0 && <option value="">-- Chưa có học viên --</option>}
                 {students.map(st => (
                   <option key={st.id} value={st.id}>{st.name}</option>
                 ))}
@@ -413,8 +488,8 @@ export const LearningProgressDashboard: React.FC = () => {
                 outline: 'none',
               }}
             >
-              <option value="">-- Tất cả môn học --</option>
-              {mySubjects.map(sub => (
+              {availableSubjects.length === 0 && <option value="">-- Chưa có môn học --</option>}
+              {availableSubjects.map(sub => (
                 <option key={sub.id} value={sub.id}>{sub.name}</option>
               ))}
             </select>
@@ -425,10 +500,13 @@ export const LearningProgressDashboard: React.FC = () => {
           <button
             onClick={openCreateModal}
             className="btn-primary"
+            disabled={students.length === 0}
             style={{
               padding: '10px 20px',
               fontSize: '13px',
               fontWeight: 'bold',
+              opacity: students.length === 0 ? 0.5 : 1,
+              cursor: students.length === 0 ? 'not-allowed' : 'pointer'
             }}
           >
             🎯 Tạo Mục Tiêu Học Tập
@@ -445,6 +523,14 @@ export const LearningProgressDashboard: React.FC = () => {
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>Đang tải mục tiêu...</div>
+          ) : isTutor && students.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px' }}>👤</div>
+              <h4 style={{ color: '#fff', fontSize: '15px', marginBottom: '6px' }}>Chưa có học viên</h4>
+              <p style={{ fontSize: '13px' }}>
+                Bạn chưa có học viên nào với lịch học đã xác nhận hoặc hoàn tất để theo dõi tiến độ.
+              </p>
+            </div>
           ) : isTutor && !selectedStudentId ? (
             <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
               <div style={{ fontSize: '40px', marginBottom: '12px' }}>👤</div>
@@ -559,7 +645,8 @@ export const LearningProgressDashboard: React.FC = () => {
             renderSVGChart()
           ) : (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-              Select a Subject from the dropdown at the top to load visual metrics and score charts.
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>📈</div>
+              Vui lòng chọn một Môn học từ danh sách phía trên để xem biểu đồ xu hướng và phân tích điểm số.
             </div>
           )}
         </div>
@@ -599,7 +686,7 @@ export const LearningProgressDashboard: React.FC = () => {
                 </label>
                 <select
                   value={newStudentId}
-                  onChange={(e) => setNewStudentId(e.target.value)}
+                  onChange={(e) => handleModalStudentChange(e.target.value)}
                   required
                   style={{
                     width: '100%',
@@ -634,8 +721,8 @@ export const LearningProgressDashboard: React.FC = () => {
                     color: '#fff',
                   }}
                 >
-                  <option value="">-- Chọn môn học --</option>
-                  {mySubjects.map(sub => (
+                  {modalSubjects.length === 0 && <option value="">-- Học viên này chưa có môn học hợp lệ --</option>}
+                  {modalSubjects.map(sub => (
                     <option key={sub.id} value={sub.id}>{sub.name}</option>
                   ))}
                 </select>
@@ -691,6 +778,7 @@ export const LearningProgressDashboard: React.FC = () => {
                 </label>
                 <input
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={newTargetDate}
                   onChange={(e) => setNewTargetDate(e.target.value)}
                   style={{
@@ -810,6 +898,7 @@ export const LearningProgressDashboard: React.FC = () => {
                 </label>
                 <input
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={newTargetDate}
                   onChange={(e) => setNewTargetDate(e.target.value)}
                   style={{
