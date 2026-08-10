@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://tutorplatform-gcduceejgkefcya6.eastasia-01.azurewebsites.net/api/:path*"
+      "destination": "https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net/api/:path*"
     },
     {
       "source": "/hubs/:path*",
-      "destination": "https://tutorplatform-gcduceejgkefcya6.eastasia-01.azurewebsites.net/hubs/:path*"
+      "destination": "https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net/hubs/:path*"
     },
     {
       "source": "/(.*)",
