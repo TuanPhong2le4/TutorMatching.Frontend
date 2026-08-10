@@ -19,8 +19,8 @@ export const AdminTutorApproval: React.FC = () => {
       setLoading(true);
       const res = await adminUserService.getPendingTutors(1, 100);
       setTutors(res.items || []);
-    } catch (err) {
-      console.error('Failed to load pending tutors:', err);
+    } catch {
+      setTutors([]);
     } finally {
       setLoading(false);
     }
@@ -32,8 +32,8 @@ export const AdminTutorApproval: React.FC = () => {
       setAvailLoading(true);
       const list = await availabilityService.getAvailabilities(tutor.userId);
       setAvailabilities(list || []);
-    } catch (err) {
-      console.error('Failed to fetch tutor availabilities:', err);
+    } catch {
+      setAvailabilities([]);
     } finally {
       setAvailLoading(false);
     }
