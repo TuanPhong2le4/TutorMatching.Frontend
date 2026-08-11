@@ -20,24 +20,15 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<User | null>(() => authService.getStoredUser());
+  const [token, setToken] = useState<string | null>(() => authService.getStoredToken());
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   // Auth Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
-    const storedToken = authService.getStoredToken();
-    const storedUser = authService.getStoredUser();
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(storedUser);
-    }
-    setIsLoading(false);
-
     const handleUnauthorized = () => {
       authService.logout();
       setUser(null);
@@ -77,6 +68,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     authService.logout();
     setUser(null);
     setToken(null);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', '/login');
+    }
   };
 
   const updateUser = (updatedUserPartial: Partial<User>) => {

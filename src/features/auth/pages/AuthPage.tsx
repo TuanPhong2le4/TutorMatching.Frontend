@@ -39,11 +39,12 @@ export const AuthPage: React.FC = () => {
   React.useEffect(() => {
     const handleLocation = () => {
       const path = window.location.pathname;
+      const search = window.location.search;
       if (path === '/register') {
         setMode('register');
       } else {
         setMode('login');
-        if (path !== '/login') {
+        if (path !== '/login' && !search.includes('payment=')) {
           window.history.replaceState(null, '', '/login');
         }
       }
@@ -217,6 +218,7 @@ export const AuthPage: React.FC = () => {
         await register({ email, password, fullName, role });
         saveRegisteredEmail(email);
       }
+      window.history.replaceState(null, '', '/home');
     } catch (err: any) {
       parseBackendErrors(err);
     } finally {

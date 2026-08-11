@@ -13,8 +13,31 @@ import { ToastContainer, type ToastItem } from '../shared';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'admin-revenue' | 'admin-subjects' | 'center-notifications'>('home');
-  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(['home']));
+  const [activeTab, setActiveTab] = useState<'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'admin-revenue' | 'admin-subjects' | 'center-notifications'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    const paymentParam = params.get('payment');
+    if (paymentParam || tabParam === 'wallet') {
+      return 'wallet';
+    }
+    const validTabs = ['home', 'tutors', 'bookings', 'wallet', 'progress', 'admin-reviews', 'admin-users', 'admin-tutors', 'admin-revenue', 'admin-subjects', 'center-notifications'];
+    if (tabParam && validTabs.includes(tabParam)) {
+      return tabParam as any;
+    }
+    return 'home';
+  });
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    const paymentParam = params.get('payment');
+    if (paymentParam || tabParam === 'wallet') {
+      return new Set(['home', 'wallet']);
+    }
+    if (tabParam) {
+      return new Set(['home', tabParam]);
+    }
+    return new Set(['home']);
+  });
 
   useEffect(() => {
     setVisitedTabs((prev) => {
@@ -204,8 +227,21 @@ export default function App() {
           } else {
             setActiveTab('admin-subjects');
           }
-        } else if (path === '/home') {
-          setActiveTab('home');
+        } else if (path === '/home' || path === '/' || path === '') {
+          const params = new URLSearchParams(window.location.search);
+          const tabParam = params.get('tab');
+          const paymentParam = params.get('payment');
+          if (paymentParam || tabParam === 'wallet') {
+            setActiveTab('wallet');
+          } else if (tabParam === 'tutors') {
+            setActiveTab('tutors');
+          } else if (tabParam === 'bookings') {
+            setActiveTab('bookings');
+          } else if (tabParam === 'progress' && !isAdmin) {
+            setActiveTab('progress');
+          } else {
+            setActiveTab('home');
+          }
         } else {
           setActiveTab('home');
           window.history.replaceState(null, '', '/home');
@@ -217,6 +253,13 @@ export default function App() {
     window.addEventListener('popstate', handleLocation);
     return () => window.removeEventListener('popstate', handleLocation);
   }, [isAuthenticated, activeTab, user]);
+
+  const handleLogout = () => {
+    logout();
+    setActiveTab('home');
+    setVisitedTabs(new Set(['home']));
+    window.history.replaceState(null, '', '/login');
+  };
 
   // Phase 4 Wallet State
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -464,14 +507,14 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const paymentStatus = params.get('payment');
     if (paymentStatus === 'success') {
-      alert('🎉 Nạp tiền qua VNPAY thành công! Tín chỉ đã được cộng vào tài khoản của bạn.');
-      window.history.replaceState({}, document.title, window.location.pathname);
+      setActiveTab('wallet');
+      window.history.replaceState(null, '', '/wallet');
       fetchWalletBalance();
-      setActiveTab('wallet');
+      alert('🎉 Nạp tiền qua VNPAY thành công! Tín chỉ đã được cộng vào tài khoản của bạn.');
     } else if (paymentStatus === 'failed') {
-      alert('❌ Thanh toán qua VNPAY thất bại hoặc bị hủy bỏ.');
-      window.history.replaceState({}, document.title, window.location.pathname);
       setActiveTab('wallet');
+      window.history.replaceState(null, '', '/wallet');
+      alert('❌ Thanh toán qua VNPAY thất bại hoặc bị hủy bỏ.');
     }
   }, [isAuthenticated]);
 
@@ -917,7 +960,7 @@ export default function App() {
           )}
 
           <button
-            onClick={logout}
+            onClick={handleLogout}
             style={{
               background: 'rgba(239, 68, 68, 0.15)',
               border: '1px solid rgba(239, 68, 68, 0.3)',
