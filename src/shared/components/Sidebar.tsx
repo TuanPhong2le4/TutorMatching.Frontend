@@ -86,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             padding: '0 20px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
@@ -133,39 +133,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </div>
           </div>
-
-          {/* 3-Bar Hamburger Toggle Button matching Image 2 */}
-          <button
-            type="button"
-            onClick={onClose}
-            title="Bật / Tắt Sidebar"
-            style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '8px',
-              color: '#38bdf8',
-              cursor: 'pointer',
-              padding: '6px 8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)';
-              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
         </div>
 
         {/* Navigation Menu List */}
