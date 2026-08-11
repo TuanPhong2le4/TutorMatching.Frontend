@@ -13,7 +13,7 @@ import { ToastContainer, Sidebar, Header, type TabType, type ToastItem } from '.
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');

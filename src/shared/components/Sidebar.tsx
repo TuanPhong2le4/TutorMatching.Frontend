@@ -134,24 +134,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          {/* Close button for Mobile */}
+          {/* 3-Bar Hamburger Toggle Button matching Image 2 */}
           <button
+            type="button"
             onClick={onClose}
-            className="lg:hidden"
+            title="Bật / Tắt Sidebar"
             style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: '8px',
-              color: '#94a3b8',
+              color: '#38bdf8',
               cursor: 'pointer',
-              padding: '6px',
+              padding: '6px 8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)';
+              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6L6 18M6 6l12 12" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
         </div>
@@ -381,6 +393,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Responsive Style Overrides */}
       <style>{`
+        .sidebar-container {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
         @media (max-width: 1023px) {
           .sidebar-container {
             position: fixed !important;
@@ -397,11 +412,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }
         }
         @media (min-width: 1024px) {
-          .sidebar-container {
-            transform: none !important;
+          .sidebar-closed {
+            width: 0 !important;
+            min-width: 0 !important;
+            margin-left: -260px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            overflow: hidden !important;
           }
-          .lg\\:hidden {
-            display: none !important;
+          .sidebar-open {
+            width: 260px !important;
+            min-width: 260px !important;
+            margin-left: 0 !important;
+            opacity: 1 !important;
           }
         }
       `}</style>

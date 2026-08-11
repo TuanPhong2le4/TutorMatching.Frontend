@@ -104,17 +104,18 @@ export const Header: React.FC<HeaderProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <button
           onClick={onMenuToggle}
-          className="lg:hidden"
+          title="Bật / Tắt Sidebar"
           style={{
             background: 'rgba(255, 255, 255, 0.05)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: '10px',
-            color: '#f8fafc',
+            color: '#38bdf8',
             cursor: 'pointer',
             padding: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            transition: 'all 0.2s ease',
           }}
           aria-label="Toggle Navigation Menu"
         >
