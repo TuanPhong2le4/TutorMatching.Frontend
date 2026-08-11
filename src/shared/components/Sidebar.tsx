@@ -42,10 +42,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
+      {/* Mobile Touch Backdrop Overlay */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            zIndex: 998,
+            display: 'block',
+          }}
+          className="lg:hidden"
+        />
+      )}
+
       {/* Vertical Sidebar */}
       <aside
         style={{
-          backgroundColor: 'rgba(12, 18, 34, 0.94)',
+          backgroundColor: 'rgba(12, 18, 34, 0.96)',
           backdropFilter: 'blur(16px)',
           borderRight: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
@@ -341,28 +356,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Responsive Style Overrides */}
       <style>{`
-        .sidebar-container {
-          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-          flex-shrink: 0 !important;
+        @media (max-width: 1023px) {
+          .sidebar-container {
+            position: fixed !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            z-index: 999 !important;
+            height: 100vh !important;
+            box-shadow: 8px 0 32px rgba(0, 0, 0, 0.75) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease !important;
+          }
+          .sidebar-closed {
+            transform: translateX(-100%) !important;
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+          }
+          .sidebar-open {
+            transform: translateX(0) !important;
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+          }
         }
-        .sidebar-closed {
-          width: 0 !important;
-          min-width: 0 !important;
-          max-width: 0 !important;
-          margin-left: 0 !important;
-          opacity: 0 !important;
-          visibility: hidden !important;
-          pointer-events: none !important;
-          overflow: hidden !important;
-          border-right: none !important;
-        }
-        .sidebar-open {
-          width: 260px !important;
-          min-width: 260px !important;
-          max-width: 260px !important;
-          margin-left: 0 !important;
-          opacity: 1 !important;
-          visibility: visible !important;
+
+        @media (min-width: 1024px) {
+          .sidebar-container {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            flex-shrink: 0 !important;
+          }
+          .sidebar-closed {
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            margin-left: 0 !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            overflow: hidden !important;
+            border-right: none !important;
+          }
+          .sidebar-open {
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+            margin-left: 0 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+          }
         }
       `}</style>
     </>
