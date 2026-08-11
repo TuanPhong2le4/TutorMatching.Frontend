@@ -805,11 +805,15 @@ export default function App() {
         <Header
           user={user}
           walletBalance={walletBalance}
+          notifications={notifications}
           unreadCount={unreadCount}
           activeTabTitle={getActiveTabTitle()}
           onMenuToggle={() => setIsSidebarOpen((prev) => !prev)}
           onOpenWallet={() => handleTabChange('wallet')}
-          onOpenNotifications={() => handleTabChange('center-notifications')}
+          onRefreshNotifications={fetchNotifications}
+          onMarkNotificationRead={handleMarkNotificationRead}
+          onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+          onNavigateTab={handleTabChange}
           onOpenChangePassword={() => setIsChangePasswordOpen(true)}
           onLogout={handleLogout}
         />

@@ -1,14 +1,20 @@
 import React from 'react';
 import { User } from '../../features/auth/types/auth';
+import { NotificationDropdown, type NotificationDto } from '../../features/notifications';
+import type { TabType } from './Sidebar';
 
 interface HeaderProps {
   user: User | null;
   walletBalance: number | null;
+  notifications: NotificationDto[];
   unreadCount: number;
   activeTabTitle: string;
   onMenuToggle: () => void;
   onOpenWallet: () => void;
-  onOpenNotifications: () => void;
+  onRefreshNotifications: () => void;
+  onMarkNotificationRead: (id: string) => void;
+  onMarkAllNotificationsRead: () => void;
+  onNavigateTab: (tab: TabType) => void;
   onOpenChangePassword: () => void;
   onLogout: () => void;
 }
@@ -16,11 +22,15 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   user,
   walletBalance,
+  notifications,
   unreadCount,
   activeTabTitle,
   onMenuToggle,
   onOpenWallet,
-  onOpenNotifications,
+  onRefreshNotifications,
+  onMarkNotificationRead,
+  onMarkAllNotificationsRead,
+  onNavigateTab,
   onOpenChangePassword,
   onLogout,
 }) => {
@@ -119,46 +129,15 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
 
-        {/* Realtime Notification Bell */}
-        <button
-          onClick={onOpenNotifications}
-          style={{
-            position: 'relative',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '10px',
-            color: '#f8fafc',
-            cursor: 'pointer',
-            padding: '8px 10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-          }}
-          title="Thông báo"
-        >
-          <span style={{ fontSize: '16px' }}>🔔</span>
-          {unreadCount > 0 && (
-            <span
-              style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '-4px',
-                backgroundColor: '#ef4444',
-                color: '#ffffff',
-                fontSize: '10px',
-                fontWeight: 800,
-                borderRadius: '999px',
-                padding: '1px 5px',
-                minWidth: '16px',
-                textAlign: 'center',
-                boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)',
-              }}
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </button>
+        {/* Realtime Notification Bell Dropdown */}
+        <NotificationDropdown
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onRefresh={onRefreshNotifications}
+          onMarkRead={onMarkNotificationRead}
+          onMarkAllRead={onMarkAllNotificationsRead}
+          onNavigate={(tab) => onNavigateTab(tab as TabType)}
+        />
 
         {/* User Info (Hidden on very small screens) */}
         <div
