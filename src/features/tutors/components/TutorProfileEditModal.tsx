@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/context/AuthContext';
 import { profileService, SubjectExperienceDto } from '../services/profileService';
 import { tutorService } from '../services/tutorService';
 import { Subject } from '../types/tutor';
+import { AvailabilityManager } from './AvailabilityManager';
 
 interface TutorProfileEditModalProps {
   isOpen: boolean;
@@ -31,10 +32,17 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<Record<string, { selected: boolean; hourlyCredits: number; level: number }>>({});
 
+  // Lock body scroll when modal is open to fix scroll chaining
   useEffect(() => {
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       loadProfileAndSubjects();
+    } else {
+      document.body.style.overflow = 'unset';
     }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen]);
 
   const loadProfileAndSubjects = async () => {
@@ -241,10 +249,6 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
 
       // Trigger catalog & homepage refresh immediately
       onProfileSaved();
-
-      setTimeout(() => {
-        onClose();
-      }, 1200);
     } catch (err: any) {
       console.error('Failed to save tutor profile:', err);
       let errText = err?.response?.data?.messages?.[0] || err?.response?.data?.message || 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.';
@@ -285,9 +289,10 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         className="glass-panel"
         style={{
           width: '100%',
-          maxWidth: '740px',
+          maxWidth: '820px',
           maxHeight: '90vh',
           overflowY: 'auto',
+          overscrollBehavior: 'contain',
           padding: '32px',
           borderRadius: '20px',
           position: 'relative',
@@ -327,7 +332,7 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
           👨‍🏫 Cập Nhật Hồ Sơ Gia Sư
         </h2>
         <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px' }}>
-          Cập nhật thông tin lý lịch, bằng cấp chứng chỉ (kèm link ảnh) và thiết lập mức giá Tín chỉ.
+          Cập nhật thông tin lý lịch, bằng cấp chứng chỉ (kèm link ảnh), môn giảng dạy và cấu hình lịch rảnh.
         </p>
 
         {message && (
@@ -350,354 +355,371 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
         {loading ? (
           <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px' }}>Đang tải dữ liệu hồ sơ từ hệ thống...</div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            {/* Full Name & Phone */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            {/* Form Basic Information & Subjects */}
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* Full Name & Phone */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
+                      Họ và Tên <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <span style={{ fontSize: '11px', color: fullName.length > 300 ? '#ef4444' : '#64748b' }}>
+                      {fullName.length}/300
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={300}
+                    required
+                    value={fullName}
+                    onChange={(e) => handleTextChange('fullName', e.target.value, setFullName, 'Họ và tên')}
+                    placeholder="Nhập họ và tên đầy đủ..."
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: fieldErrors.fullName ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                      color: '#fff',
+                      fontSize: '14px',
+                      outline: 'none',
+                    }}
+                  />
+                  {fieldErrors.fullName && (
+                    <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      ⚠️ {fieldErrors.fullName}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
+                      Số Điện Thoại (10-15 chữ số)
+                    </label>
+                    <span style={{ fontSize: '11px', color: fieldErrors.phone ? '#ef4444' : '#64748b' }}>
+                      {phone.length}/15
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={15}
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="Ví dụ: 0988123456"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: fieldErrors.phone ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                      color: '#fff',
+                      fontSize: '14px',
+                      outline: 'none',
+                    }}
+                  />
+                  {fieldErrors.phone && (
+                    <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      ⚠️ {fieldErrors.phone}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Avatar URL */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
-                    Họ và Tên <span style={{ color: '#ef4444' }}>*</span>
+                    🖼️ Đường Dẫn Ảnh Đại Diện (URL Ảnh Web HTTP/HTTPS)
                   </label>
-                  <span style={{ fontSize: '11px', color: fullName.length > 300 ? '#ef4444' : '#64748b' }}>
-                    {fullName.length}/300
+                  <span style={{ fontSize: '11px', color: avatarUrl.length > 300 ? '#ef4444' : '#64748b' }}>
+                    {avatarUrl.length}/300
                   </span>
                 </div>
                 <input
                   type="text"
                   maxLength={300}
-                  required
-                  value={fullName}
-                  onChange={(e) => handleTextChange('fullName', e.target.value, setFullName, 'Họ và tên')}
-                  placeholder="Nhập họ và tên đầy đủ..."
+                  value={avatarUrl}
+                  onChange={(e) => handleTextChange('avatarUrl', e.target.value, setAvatarUrl, 'Ảnh đại diện')}
+                  placeholder="https://images.unsplash.com/photo-..."
                   style={{
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    border: fieldErrors.fullName ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                    border: fieldErrors.avatarUrl ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
                     backgroundColor: 'rgba(15, 23, 42, 0.6)',
                     color: '#fff',
                     fontSize: '14px',
                     outline: 'none',
                   }}
                 />
-                {fieldErrors.fullName && (
+                {fieldErrors.avatarUrl && (
                   <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                    ⚠️ {fieldErrors.fullName}
+                    ⚠️ {fieldErrors.avatarUrl}
                   </span>
                 )}
               </div>
 
+              {/* Qualifications with Image URL preview */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
-                    Số Điện Thoại (10-15 chữ số)
+                    📜 Bằng Cấp & Chứng Chỉ (Nhập text hoặc dán URL ảnh bằng cấp)
                   </label>
-                  <span style={{ fontSize: '11px', color: fieldErrors.phone ? '#ef4444' : '#64748b' }}>
-                    {phone.length}/15
+                  <span style={{ fontSize: '11px', color: qualifications.length > 300 ? '#ef4444' : '#64748b' }}>
+                    {qualifications.length}/300
                   </span>
                 </div>
                 <input
                   type="text"
-                  maxLength={15}
-                  value={phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="Ví dụ: 0988123456"
+                  maxLength={300}
+                  value={qualifications}
+                  onChange={(e) => handleTextChange('qualifications', e.target.value, setQualifications, 'Bằng cấp/Chứng chỉ')}
+                  placeholder="Ví dụ: IELTS 8.0 / Thạc sĩ Sư Phạm hoặc dán link ảnh: https://.../bang-cap.jpg"
                   style={{
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    border: fieldErrors.phone ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                    border: fieldErrors.qualifications ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
                     backgroundColor: 'rgba(15, 23, 42, 0.6)',
                     color: '#fff',
                     fontSize: '14px',
                     outline: 'none',
                   }}
                 />
-                {fieldErrors.phone && (
+                {fieldErrors.qualifications && (
                   <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                    ⚠️ {fieldErrors.phone}
+                    ⚠️ {fieldErrors.qualifications}
+                  </span>
+                )}
+
+                {/* Certificate Image Preview Box */}
+                {isImageUrl(qualifications) && (
+                  <div
+                    style={{
+                      marginTop: '10px',
+                      padding: '12px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(56, 189, 248, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '14px',
+                    }}
+                  >
+                    <img
+                      src={qualifications}
+                      alt="Chứng chỉ/Bằng cấp"
+                      style={{
+                        width: '80px',
+                        height: '60px',
+                        objectFit: 'cover',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    <div>
+                      <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 600, display: 'block' }}>
+                        ✓ Đã nhận diện đường dẫn ảnh Bằng Cấp
+                      </span>
+                      <a
+                        href={qualifications}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ fontSize: '11px', color: '#94a3b8', textDecoration: 'underline' }}
+                      >
+                        Bấm vào đây để xem ảnh gốc
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Bio (Limit 300 chars) */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
+                    📝 Giới Thiệu Bản Thân & Kinh Nghiệm Giảng Dạy (Tối đa 300 ký tự)
+                  </label>
+                  <span style={{ fontSize: '11px', color: bio.length > 300 ? '#ef4444' : '#64748b' }}>
+                    {bio.length}/300
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  maxLength={300}
+                  value={bio}
+                  onChange={(e) => handleTextChange('bio', e.target.value, setBio, 'Giới thiệu bản thân')}
+                  placeholder="Mô tả ngắn gọn về phương pháp giảng dạy, phong cách truyền đạt và kinh nghiệm của bạn (tối đa 300 ký tự)..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: fieldErrors.bio ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                    color: '#fff',
+                    fontSize: '14px',
+                    outline: 'none',
+                    resize: 'vertical',
+                  }}
+                />
+                {fieldErrors.bio && (
+                  <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    ⚠️ {fieldErrors.bio}
                   </span>
                 )}
               </div>
-            </div>
 
-            {/* Avatar URL */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
-                  🖼️ Đường Dẫn Ảnh Đại Diện (URL Ảnh Web HTTP/HTTPS)
-                </label>
-                <span style={{ fontSize: '11px', color: avatarUrl.length > 300 ? '#ef4444' : '#64748b' }}>
-                  {avatarUrl.length}/300
-                </span>
-              </div>
-              <input
-                type="text"
-                maxLength={300}
-                value={avatarUrl}
-                onChange={(e) => handleTextChange('avatarUrl', e.target.value, setAvatarUrl, 'Ảnh đại diện')}
-                placeholder="https://images.unsplash.com/photo-..."
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: fieldErrors.avatarUrl ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
-                  backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  outline: 'none',
-                }}
-              />
-              {fieldErrors.avatarUrl && (
-                <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                  ⚠️ {fieldErrors.avatarUrl}
-                </span>
-              )}
-            </div>
-
-            {/* Qualifications with Image URL preview */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
-                  📜 Bằng Cấp & Chứng Chỉ (Nhập text hoặc dán URL ảnh bằng cấp)
-                </label>
-                <span style={{ fontSize: '11px', color: qualifications.length > 300 ? '#ef4444' : '#64748b' }}>
-                  {qualifications.length}/300
-                </span>
-              </div>
-              <input
-                type="text"
-                maxLength={300}
-                value={qualifications}
-                onChange={(e) => handleTextChange('qualifications', e.target.value, setQualifications, 'Bằng cấp/Chứng chỉ')}
-                placeholder="Ví dụ: IELTS 8.0 / Thạc sĩ Sư Phạm hoặc dán link ảnh: https://.../bang-cap.jpg"
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: fieldErrors.qualifications ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
-                  backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  outline: 'none',
-                }}
-              />
-              {fieldErrors.qualifications && (
-                <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                  ⚠️ {fieldErrors.qualifications}
-                </span>
-              )}
-
-              {/* Certificate Image Preview Box */}
-              {isImageUrl(qualifications) && (
-                <div
+              {/* Online Meeting Link */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
+                    🔗 Link Phòng Học Trực Tuyến (Google Meet / Zoom)
+                  </label>
+                  <span style={{ fontSize: '11px', color: defaultMeetingLink.length > 300 ? '#ef4444' : '#64748b' }}>
+                    {defaultMeetingLink.length}/300
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={300}
+                  value={defaultMeetingLink}
+                  onChange={(e) => handleTextChange('defaultMeetingLink', e.target.value, setDefaultMeetingLink, 'Link phòng học')}
+                  placeholder="https://meet.google.com/abc-defg-hij"
                   style={{
-                    marginTop: '10px',
-                    padding: '12px',
-                    backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: fieldErrors.defaultMeetingLink ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                    color: '#fff',
+                    fontSize: '14px',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Subjects & Pricing Selection */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', color: '#e2e8f0', fontWeight: 600 }}>
+                  📚 Chọn Môn Giảng Dạy & Thiết Lập Học Phí Tín Chỉ
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '180px', overflowY: 'auto' }}>
+                  {allSubjects.map((sub) => {
+                    const isChecked = selectedSubjects[sub.id]?.selected || false;
+                    const price = selectedSubjects[sub.id]?.hourlyCredits || 50;
+
+                    return (
+                      <div
+                        key={sub.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          backgroundColor: isChecked ? 'rgba(56, 189, 248, 0.1)' : 'rgba(255,255,255,0.03)',
+                          border: isChecked ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
+                        }}
+                      >
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1 }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleSubjectToggle(sub.id)}
+                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                          />
+                          <span style={{ color: '#fff', fontWeight: 600, fontSize: '13px' }}>{sub.name}</span>
+                        </label>
+
+                        {isChecked && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#94a3b8', fontSize: '12px' }}>Học phí/giờ:</span>
+                            <input
+                              type="number"
+                              min="10"
+                              max="10000"
+                              value={price}
+                              onChange={(e) => handlePriceChange(sub.id, Number(e.target.value))}
+                              style={{
+                                width: '80px',
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                                color: '#fff',
+                                fontSize: '13px',
+                                outline: 'none',
+                                textAlign: 'center',
+                              }}
+                            />
+                            <span style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 700 }}>TC</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Actions Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  style={{
+                    padding: '10px 20px',
                     borderRadius: '10px',
-                    border: '1px solid rgba(56, 189, 248, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    backgroundColor: 'transparent',
+                    color: '#94a3b8',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
                   }}
                 >
-                  <img
-                    src={qualifications}
-                    alt="Chứng chỉ/Bằng cấp"
-                    style={{
-                      width: '80px',
-                      height: '60px',
-                      objectFit: 'cover',
-                      borderRadius: '6px',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                    }}
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                  <div>
-                    <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 600, display: 'block' }}>
-                      ✓ Đã nhận diện đường dẫn ảnh Bằng Cấp
-                    </span>
-                    <a
-                      href={qualifications}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ fontSize: '11px', color: '#94a3b8', textDecoration: 'underline' }}
-                    >
-                      Bấm vào đây để xem ảnh gốc
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
+                  Đóng
+                </button>
 
-            {/* Bio (Limit 300 chars) */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
-                  📝 Giới Thiệu Bản Thân & Kinh Nghiệm Giảng Dạy (Tối đa 300 ký tự)
-                </label>
-                <span style={{ fontSize: '11px', color: bio.length > 300 ? '#ef4444' : '#64748b' }}>
-                  {bio.length}/300
-                </span>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)',
+                    color: '#fff',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(56, 189, 248, 0.3)',
+                  }}
+                >
+                  {saving ? '⏳ Đang Lưu...' : '💾 Lưu Thông Tin & Môn Học'}
+                </button>
               </div>
-              <textarea
-                rows={3}
-                maxLength={300}
-                value={bio}
-                onChange={(e) => handleTextChange('bio', e.target.value, setBio, 'Giới thiệu bản thân')}
-                placeholder="Mô tả ngắn gọn về phương pháp giảng dạy, phong cách truyền đạt và kinh nghiệm của bạn (tối đa 300 ký tự)..."
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: fieldErrors.bio ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
-                  backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  outline: 'none',
-                  resize: 'vertical',
-                }}
-              />
-              {fieldErrors.bio && (
-                <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                  ⚠️ {fieldErrors.bio}
-                </span>
-              )}
-            </div>
+            </form>
 
-            {/* Online Meeting Link */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
-                  🔗 Link Phòng Học Trực Tuyến (Google Meet / Zoom)
-                </label>
-                <span style={{ fontSize: '11px', color: defaultMeetingLink.length > 300 ? '#ef4444' : '#64748b' }}>
-                  {defaultMeetingLink.length}/300
-                </span>
+            {/* Section: Cấu Hình Lịch Rảnh Giảng Dạy (Matching Image 2) */}
+            <div style={{ paddingTop: '24px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  📅 Cấu Hình Lịch Rảnh Giảng Dạy
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px', marginBottom: 0 }}>
+                  Thiết lập các khung giờ rảnh hàng tuần hoặc theo ngày cụ thể để học sinh có thể nhìn thấy và chọn giờ học.
+                </p>
               </div>
-              <input
-                type="text"
-                maxLength={300}
-                value={defaultMeetingLink}
-                onChange={(e) => handleTextChange('defaultMeetingLink', e.target.value, setDefaultMeetingLink, 'Link phòng học')}
-                placeholder="https://meet.google.com/abc-defg-hij"
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: fieldErrors.defaultMeetingLink ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
-                  backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  outline: 'none',
-                }}
-              />
+
+              <AvailabilityManager onUpdate={onProfileSaved} />
             </div>
-
-            {/* Subjects & Pricing Selection */}
-            <div>
-              <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', color: '#e2e8f0', fontWeight: 600 }}>
-                📚 Chọn Môn Giảng Dạy & Thiết Lập Học Phí Tín Chỉ
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '180px', overflowY: 'auto' }}>
-                {allSubjects.map((sub) => {
-                  const isChecked = selectedSubjects[sub.id]?.selected || false;
-                  const price = selectedSubjects[sub.id]?.hourlyCredits || 50;
-
-                  return (
-                    <div
-                      key={sub.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        borderRadius: '10px',
-                        backgroundColor: isChecked ? 'rgba(56, 189, 248, 0.1)' : 'rgba(255,255,255,0.03)',
-                        border: isChecked ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
-                      }}
-                    >
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1 }}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleSubjectToggle(sub.id)}
-                          style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        />
-                        <span style={{ color: '#fff', fontWeight: 600, fontSize: '13px' }}>{sub.name}</span>
-                      </label>
-
-                      {isChecked && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: '#94a3b8', fontSize: '12px' }}>Học phí/giờ:</span>
-                          <input
-                            type="number"
-                            min="10"
-                            max="10000"
-                            value={price}
-                            onChange={(e) => handlePriceChange(sub.id, Number(e.target.value))}
-                            style={{
-                              width: '80px',
-                              padding: '6px 10px',
-                              borderRadius: '6px',
-                              border: '1px solid rgba(255,255,255,0.2)',
-                              backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                              color: '#fff',
-                              fontSize: '13px',
-                              outline: 'none',
-                              textAlign: 'center',
-                            }}
-                          />
-                          <span style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 700 }}>TC</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Actions Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-              <button
-                type="button"
-                onClick={onClose}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  backgroundColor: 'transparent',
-                  color: '#94a3b8',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Hủy Bỏ
-              </button>
-
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)',
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 14px rgba(56, 189, 248, 0.3)',
-                }}
-              >
-                {saving ? '⏳ Đang Lưu Hồ Sơ...' : '💾 Lưu Hồ Sơ Gia Sư'}
-              </button>
-            </div>
-          </form>
+          </div>
         )}
       </div>
     </div>

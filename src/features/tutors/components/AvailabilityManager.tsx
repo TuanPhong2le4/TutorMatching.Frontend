@@ -157,17 +157,17 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({ onUpda
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'start' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', alignItems: 'start' }}>
       {/* Configuration Form */}
-      <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#38bdf8' }}>
+      <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '20px', borderRadius: '16px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
           ➕ Thêm Khung Giờ Rảnh
         </h3>
 
         <form onSubmit={handleAddSlot}>
           {/* Recurring Toggle */}
           <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#e2e8f0' }}>
               <input
                 type="radio"
                 checked={isRecurring}
@@ -176,7 +176,7 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({ onUpda
               />
               Lặp lại hàng tuần (Học Kỳ)
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#e2e8f0' }}>
               <input
                 type="radio"
                 checked={!isRecurring}
@@ -196,12 +196,12 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({ onUpda
                 onChange={(e) => setDayOfWeek(Number(e.target.value))}
                 style={{
                   width: '100%',
-                  padding: '10px',
+                  padding: '10px 12px',
                   borderRadius: '8px',
-                  backgroundColor: '#0f172a',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   color: '#fff',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   outline: 'none',
                 }}
               >
@@ -220,12 +220,12 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({ onUpda
                 onChange={(e) => setSpecificDate(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px',
+                  padding: '10px 12px',
                   borderRadius: '8px',
-                  backgroundColor: '#0f172a',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   color: '#fff',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   outline: 'none',
                 }}
               />
@@ -235,68 +235,88 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({ onUpda
           {/* Time Picker Inputs */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Bắt Đầu (định dạng 24h):</label>
+              <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Bắt Đầu (định dạng 24h):</label>
               <input
                 type="text"
-                placeholder="HH:mm (ví dụ: 09:15)"
+                placeholder="09:00"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 onBlur={() => formatTimeOnBlur(startTime, setStartTime)}
                 style={{
                   width: '100%',
-                  padding: '10px',
+                  padding: '10px 12px',
                   borderRadius: '8px',
-                  backgroundColor: '#0f172a',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   color: '#fff',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   outline: 'none',
+                  textAlign: 'center',
                 }}
               />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Kết Thúc (định dạng 24h):</label>
+              <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', fontWeight: 600, marginBottom: '6px' }}>Giờ Kết Thúc (định dạng 24h):</label>
               <input
                 type="text"
-                placeholder="HH:mm (ví dụ: 12:45)"
+                placeholder="12:00"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 onBlur={() => formatTimeOnBlur(endTime, setEndTime)}
                 style={{
                   width: '100%',
-                  padding: '10px',
+                  padding: '10px 12px',
                   borderRadius: '8px',
-                  backgroundColor: '#0f172a',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   color: '#fff',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   outline: 'none',
+                  textAlign: 'center',
                 }}
               />
             </div>
           </div>
 
-          <button type="submit" className="btn-primary" style={{ width: '100%', padding: '12px' }}>
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              padding: '10px 16px',
+              borderRadius: '10px',
+              border: 'none',
+              background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+              color: '#fff',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+            }}
+          >
             Thêm Khung Giờ Rảnh
           </button>
         </form>
       </div>
 
       {/* Slots List */}
-      <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
+      <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '20px', borderRadius: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#fff' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
             📋 Danh Sách Khung Giờ Đã Thiết Lập
           </h3>
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="btn-primary"
             style={{
-              padding: '8px 16px',
-              fontSize: '13px',
+              padding: '8px 14px',
+              fontSize: '12px',
+              fontWeight: 700,
+              borderRadius: '8px',
+              border: 'none',
               background: 'linear-gradient(135deg, #10b981, #059669)',
-              boxShadow: 'none',
+              color: '#fff',
+              cursor: saving || loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
             }}
           >
             {saving ? '⏳ Đang lưu...' : '💾 Lưu Lịch Rảnh'}
