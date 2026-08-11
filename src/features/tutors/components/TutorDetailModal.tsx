@@ -115,8 +115,33 @@ export const TutorDetailModal: React.FC<TutorDetailModalProps> = ({ tutor, onClo
               </span>
             </div>
             {tutor.qualifications && (
-              <div style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 500 }}>
-                📜 {tutor.qualifications}
+              <div style={{ marginTop: '8px' }}>
+                {(tutor.qualifications.toLowerCase().startsWith('http://') || tutor.qualifications.toLowerCase().startsWith('https://') || tutor.qualifications.toLowerCase().startsWith('data:image')) ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📜 Bằng Cấp / Chứng Chỉ Gia Sư:
+                    </div>
+                    <a href={tutor.qualifications} target="_blank" rel="noreferrer" title="Bấm để xem ảnh gốc">
+                      <img
+                        src={tutor.qualifications}
+                        alt="Bằng cấp gia sư"
+                        style={{
+                          maxHeight: '120px',
+                          maxWidth: '220px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                          objectFit: 'cover',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                          cursor: 'pointer',
+                        }}
+                      />
+                    </a>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 500 }}>
+                    📜 {tutor.qualifications}
+                  </div>
+                )}
               </div>
             )}
           </div>

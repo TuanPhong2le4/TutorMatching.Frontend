@@ -814,6 +814,7 @@ export default function App() {
           onMarkNotificationRead={handleMarkNotificationRead}
           onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
           onNavigateTab={handleTabChange}
+          onOpenProfileEdit={() => setIsProfileEditOpen(true)}
           onOpenChangePassword={() => setIsChangePasswordOpen(true)}
           onLogout={handleLogout}
         />
@@ -2887,6 +2888,16 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Tutor Profile Edit Modal */}
+      <TutorProfileEditModal
+        isOpen={isProfileEditOpen}
+        onClose={() => setIsProfileEditOpen(false)}
+        onProfileSaved={() => {
+          fetchTutors();
+          fetchWalletBalance();
+        }}
+      />
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>

@@ -15,6 +15,7 @@ interface HeaderProps {
   onMarkNotificationRead: (id: string) => void;
   onMarkAllNotificationsRead: () => void;
   onNavigateTab: (tab: TabType) => void;
+  onOpenProfileEdit?: () => void;
   onOpenChangePassword: () => void;
   onLogout: () => void;
 }
@@ -31,11 +32,13 @@ export const Header: React.FC<HeaderProps> = ({
   onMarkNotificationRead,
   onMarkAllNotificationsRead,
   onNavigateTab,
+  onOpenProfileEdit,
   onOpenChangePassword,
   onLogout,
 }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const isTutorRole = Number(user?.role) === 1 || user?.role === 'Tutor';
 
   // Close User Menu on Click Outside
   useEffect(() => {
@@ -262,6 +265,40 @@ export const Header: React.FC<HeaderProps> = ({
                 animation: 'fadeInMenu 0.15s ease-out',
               }}
             >
+              {/* Option for Tutor ONLY: Cập Nhật Hồ Sơ Gia Sư */}
+              {isTutorRole && (
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    onOpenProfileEdit?.();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#38bdf8',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background-color 0.15s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.08)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  <span>Cập Nhật Hồ Sơ Gia Sư</span>
+                </button>
+              )}
+
               {/* Option 1: Change Password */}
               <button
                 onClick={handleChangePasswordClick}
