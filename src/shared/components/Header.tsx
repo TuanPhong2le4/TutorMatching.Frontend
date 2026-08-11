@@ -215,13 +215,10 @@ export const Header: React.FC<HeaderProps> = ({
               {user?.fullName?.charAt(0).toUpperCase() || 'A'}
             </div>
 
-            {/* Name & Role Subtitle */}
-            <div className="hidden sm:flex" style={{ flexDirection: 'column', textAlign: 'left' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc', lineHeight: '1.2' }}>
-                {user?.fullName || 'Admin'}
-              </span>
-              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500, marginTop: '2px' }}>
-                {getRoleSubtitle()}
+            {/* Name */}
+            <div className="hidden sm:flex" style={{ alignItems: 'center' }}>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc', whiteSpace: 'nowrap' }}>
+                {user?.fullName || 'Người Dùng'}
               </span>
             </div>
 
@@ -251,7 +248,7 @@ export const Header: React.FC<HeaderProps> = ({
                 position: 'absolute',
                 top: '52px',
                 right: 0,
-                width: '210px',
+                width: '200px',
                 backgroundColor: 'rgba(15, 23, 42, 0.98)',
                 backdropFilter: 'blur(16px)',
                 border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -265,36 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
                 animation: 'fadeInMenu 0.15s ease-out',
               }}
             >
-              {/* Option 1: User Profile */}
-              <button
-                onClick={handleUserProfileClick}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'transparent',
-                  color: '#e2e8f0',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'background-color 0.15s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <span>User Profile</span>
-              </button>
-
-              {/* Option 2: Change Password */}
+              {/* Option 1: Change Password */}
               <button
                 onClick={handleChangePasswordClick}
                 style={{
