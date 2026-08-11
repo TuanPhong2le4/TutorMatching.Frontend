@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../../features/auth/types/auth';
 import { NotificationDropdown, type NotificationDto } from '../../features/notifications';
 import type { TabType } from './Sidebar';
@@ -34,18 +34,51 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenChangePassword,
   onLogout,
 }) => {
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close User Menu on Click Outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const roleNum = Number(user?.role);
-  const getRoleBadge = () => {
+  const getRoleSubtitle = () => {
     if (roleNum === 0 || user?.role === 'Admin') {
-      return { text: 'Quản Trị Viên', bg: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: 'rgba(239, 68, 68, 0.3)' };
+      return 'System Administrator';
     }
     if (roleNum === 1 || user?.role === 'Tutor') {
-      return { text: 'Gia Sư', bg: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' };
+      return 'Gia Sư Chuyên Nghiệp';
     }
-    return { text: 'Học Viên', bg: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: 'rgba(56, 189, 248, 0.3)' };
+    return 'Học Viên Nền Tảng';
   };
 
-  const badge = getRoleBadge();
+  const handleUserProfileClick = () => {
+    setIsUserMenuOpen(false);
+    if (roleNum === 0 || user?.role === 'Admin') {
+      onNavigateTab('admin-users');
+    } else if (roleNum === 1 || user?.role === 'Tutor') {
+      onNavigateTab('bookings');
+    } else {
+      onNavigateTab('progress');
+    }
+  };
+
+  const handleChangePasswordClick = () => {
+    setIsUserMenuOpen(false);
+    onOpenChangePassword();
+  };
+
+  const handleLogoutClick = () => {
+    setIsUserMenuOpen(false);
+    onLogout();
+  };
 
   return (
     <header
@@ -105,8 +138,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Actions, Wallet, Notifications, Profile & Logout */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* Right: Wallet Credit, Notifications & Compact User Profile Dropdown */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         {/* Wallet Credit Badge */}
         <div
           onClick={onOpenWallet}
@@ -139,111 +172,207 @@ export const Header: React.FC<HeaderProps> = ({
           onNavigate={(tab) => onNavigateTab(tab as TabType)}
         />
 
-        {/* User Info (Hidden on very small screens) */}
-        <div
-          className="hidden sm:flex"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '4px 8px',
-          }}
-        >
+        {/* COMPACT USER PROFILE DROPDOWN (Matching Target UI in Hình 2) */}
+        <div ref={userMenuRef} style={{ position: 'relative' }}>
+          {/* User Trigger Button */}
           <div
+            onClick={() => setIsUserMenuOpen((prev) => !prev)}
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: '14px',
-              color: '#ffffff',
-              boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
+              gap: '10px',
+              padding: '6px 10px',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              backgroundColor: isUserMenuOpen ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+              transition: 'all 0.2s ease',
+              userSelect: 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (!isUserMenuOpen) e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+            }}
+            onMouseLeave={(e) => {
+              if (!isUserMenuOpen) e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            {user?.fullName?.charAt(0).toUpperCase() || 'U'}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#f8fafc', lineHeight: '1.2' }}>
-              {user?.fullName || 'Người Dùng'}
-            </span>
-            <span
+            {/* Avatar Circle */}
+            <div
               style={{
-                fontSize: '10px',
-                fontWeight: 600,
-                color: badge.color,
-                display: 'inline-block',
-                marginTop: '2px',
+                width: '38px',
+                height: '38px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '15px',
+                color: '#ffffff',
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
+                flexShrink: 0,
               }}
             >
-              {badge.text}
-            </span>
+              {user?.fullName?.charAt(0).toUpperCase() || 'A'}
+            </div>
+
+            {/* Name & Role Subtitle */}
+            <div className="hidden sm:flex" style={{ flexDirection: 'column', textAlign: 'left' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc', lineHeight: '1.2' }}>
+                {user?.fullName || 'Admin'}
+              </span>
+              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500, marginTop: '2px' }}>
+                {getRoleSubtitle()}
+              </span>
+            </div>
+
+            {/* Chevron Arrow Icon */}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#94a3b8"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                transition: 'transform 0.2s ease',
+                transform: isUserMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </div>
+
+          {/* Floating Dropdown Popup Menu */}
+          {isUserMenuOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '52px',
+                right: 0,
+                width: '210px',
+                backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: '16px',
+                padding: '8px',
+                boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                zIndex: 999,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                animation: 'fadeInMenu 0.15s ease-out',
+              }}
+            >
+              {/* Option 1: User Profile */}
+              <button
+                onClick={handleUserProfileClick}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#e2e8f0',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                <span>User Profile</span>
+              </button>
+
+              {/* Option 2: Change Password */}
+              <button
+                onClick={handleChangePasswordClick}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#e2e8f0',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span>Change Password</span>
+              </button>
+
+              {/* Divider */}
+              <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.08)', margin: '4px 0' }} />
+
+              {/* Option 3: Đăng xuất */}
+              <button
+                onClick={handleLogoutClick}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#f87171',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Change Password Button */}
-        <button
-          onClick={onOpenChangePassword}
-          className="hidden md:flex"
-          style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#cbd5e1',
-            padding: '8px 12px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s ease',
-          }}
-          title="Đổi Mật Khẩu"
-        >
-          <span>🔑</span>
-          <span>Đổi Mật Khẩu</span>
-        </button>
-
-        {/* Logout Button */}
-        <button
-          onClick={onLogout}
-          style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s ease',
-          }}
-          title="Đăng Xuất"
-        >
-          <span>🚪</span>
-          <span className="hidden sm:inline">Đăng Xuất</span>
-        </button>
       </div>
 
       <style>{`
-        @media (max-width: 639px) {
-          .sm\\:flex {
-            display: none !important;
+        @keyframes fadeInMenu {
+          from {
+            opacity: 0;
+            transform: translateY(-6px);
           }
-          .sm\\:inline {
-            display: none !important;
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
-        @media (max-width: 767px) {
-          .md\\:flex {
+        @media (max-width: 639px) {
+          .sm\\:flex {
             display: none !important;
           }
         }
