@@ -103,25 +103,36 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Left: Mobile Hamburger & Page Title */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <button
+          type="button"
           onClick={onMenuToggle}
           title="Bật / Tắt Sidebar"
+          className="header-sidebar-toggle-btn"
           style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: 'rgba(255, 255, 255, 0.06)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
             borderRadius: '10px',
             color: '#38bdf8',
             cursor: 'pointer',
-            padding: '8px',
+            padding: '8px 10px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s ease',
+            zIndex: 35,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
           }}
           aria-label="Toggle Navigation Menu"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="12" x2="21" y2="12" />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
@@ -369,6 +380,11 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <style>{`
+        .header-sidebar-toggle-btn {
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
         @keyframes fadeInMenu {
           from {
             opacity: 0;
