@@ -49,6 +49,21 @@ export default function App() {
     });
   }, [activeTab, user?.id, isAuthenticated]);
 
+  // Session validation heartbeat: detect single-session eviction even if SignalR is idle
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+      creditService.getBalance().catch((err: any) => {
+        if (err?.response?.status === 401) {
+          window.dispatchEvent(new CustomEvent('auth:force_logout', { 
+            detail: { message: 'Tài khoản của bạn đã được đăng nhập ở nơi khác.' } 
+          }));
+        }
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   const isTabMounted = (tab: string) => visitedTabs.has(tab) || activeTab === tab;
 
   // Role-based active tab guards during render to prevent stale/unauthorized tab mounts
