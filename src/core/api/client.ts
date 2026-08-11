@@ -12,7 +12,7 @@ export const api = axios.create({
 // Add a request interceptor to append JWT Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (token) {
       if (typeof config.headers.set === 'function') {
         config.headers.set('Authorization', `Bearer ${token}`);
@@ -30,6 +30,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Clear expired credentials
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.dispatchEvent(new Event('auth:unauthorized'));

@@ -234,14 +234,23 @@ export default function App() {
           const paymentParam = params.get('payment');
           if (paymentParam || tabParam === 'wallet') {
             setActiveTab('wallet');
+            if (window.location.pathname !== '/wallet') {
+              window.history.replaceState(null, '', `/wallet${window.location.search}`);
+            }
           } else if (tabParam === 'tutors') {
             setActiveTab('tutors');
+            window.history.replaceState(null, '', '/tutors');
           } else if (tabParam === 'bookings') {
             setActiveTab('bookings');
+            window.history.replaceState(null, '', '/bookings');
           } else if (tabParam === 'progress' && !isAdmin) {
             setActiveTab('progress');
+            window.history.replaceState(null, '', '/progress');
           } else {
             setActiveTab('home');
+            if (window.location.pathname !== '/home') {
+              window.history.replaceState(null, '', '/home');
+            }
           }
         } else {
           setActiveTab('home');

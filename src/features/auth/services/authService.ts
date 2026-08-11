@@ -7,6 +7,9 @@ export const authService = {
     
     if (response.data && response.data.data) {
       const authData = response.data.data;
+      sessionStorage.setItem('token', authData.accessToken);
+      sessionStorage.setItem('refreshToken', authData.refreshToken);
+      sessionStorage.setItem('user', JSON.stringify(authData.user));
       localStorage.setItem('token', authData.accessToken);
       localStorage.setItem('refreshToken', authData.refreshToken);
       localStorage.setItem('user', JSON.stringify(authData.user));
@@ -21,6 +24,9 @@ export const authService = {
 
     if (response.data && response.data.data) {
       const authData = response.data.data;
+      sessionStorage.setItem('token', authData.accessToken);
+      sessionStorage.setItem('refreshToken', authData.refreshToken);
+      sessionStorage.setItem('user', JSON.stringify(authData.user));
       localStorage.setItem('token', authData.accessToken);
       localStorage.setItem('refreshToken', authData.refreshToken);
       localStorage.setItem('user', JSON.stringify(authData.user));
@@ -43,13 +49,16 @@ export const authService = {
   },
 
   logout(): void {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   },
 
   getStoredUser() {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = sessionStorage.getItem('user');
     if (!storedUser) return null;
     try {
       return JSON.parse(storedUser);
@@ -59,6 +68,6 @@ export const authService = {
   },
 
   getStoredToken(): string | null {
-    return localStorage.getItem('token');
+    return sessionStorage.getItem('token');
   }
 };
