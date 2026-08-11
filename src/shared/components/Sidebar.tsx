@@ -45,8 +45,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Vertical Sidebar */}
       <aside
         style={{
-          width: '260px',
-          minWidth: '260px',
           backgroundColor: 'rgba(12, 18, 34, 0.94)',
           backdropFilter: 'blur(16px)',
           borderRight: '1px solid rgba(255, 255, 255, 0.08)',
@@ -56,7 +54,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
         className={`sidebar-container ${
           isOpen ? 'sidebar-open' : 'sidebar-closed'
@@ -345,21 +342,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Responsive Style Overrides */}
       <style>{`
         .sidebar-container {
-          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          flex-shrink: 0 !important;
         }
         .sidebar-closed {
           width: 0 !important;
           min-width: 0 !important;
-          margin-left: -260px !important;
+          max-width: 0 !important;
+          margin-left: 0 !important;
           opacity: 0 !important;
+          visibility: hidden !important;
           pointer-events: none !important;
           overflow: hidden !important;
+          border-right: none !important;
         }
         .sidebar-open {
           width: 260px !important;
           min-width: 260px !important;
+          max-width: 260px !important;
           margin-left: 0 !important;
           opacity: 1 !important;
+          visibility: visible !important;
         }
       `}</style>
     </>
