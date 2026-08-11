@@ -455,10 +455,16 @@ export default function App() {
       });
 
     // Listen for single-session eviction event (ForceLogout when another user logs into the same account)
-    connection.on('ForceLogout', (data: { message?: string }) => {
+    connection.on('ForceLogout', (data: { userId?: string; message?: string }) => {
       if (isCancelled) return;
-      const message = data?.message || 'Tài khoản của bạn đã được đăng nhập ở nơi khác.';
-      window.dispatchEvent(new CustomEvent('auth:force_logout', { detail: { message } }));
+      const targetUserId = data?.userId?.toLowerCase();
+      const currentUserId = user?.id?.toLowerCase();
+
+      // If event targets this logged-in account (or broadcast without userId)
+      if (!targetUserId || targetUserId === currentUserId) {
+        const message = data?.message || 'Tài khoản của bạn đã được đăng nhập ở nơi khác.';
+        window.dispatchEvent(new CustomEvent('auth:force_logout', { detail: { message } }));
+      }
     });
 
     // Listen to real-time incoming notification events
