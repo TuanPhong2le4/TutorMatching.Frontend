@@ -42,22 +42,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
-      {isOpen && (
-        <div
-          onClick={onClose}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 40,
-            display: 'block',
-          }}
-          className="lg:hidden"
-        />
-      )}
-
       {/* Vertical Sidebar */}
       <aside
         style={{
@@ -361,38 +345,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Responsive Style Overrides */}
       <style>{`
         .sidebar-container {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
-        @media (max-width: 1023px) {
-          .sidebar-container {
-            position: fixed !important;
-            top: 0 !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            box-shadow: 8px 0 24px rgba(0, 0, 0, 0.6) !important;
-          }
-          .sidebar-closed {
-            transform: translateX(-100%) !important;
-          }
-          .sidebar-open {
-            transform: translateX(0) !important;
-          }
+        .sidebar-closed {
+          width: 0 !important;
+          min-width: 0 !important;
+          margin-left: -260px !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          overflow: hidden !important;
         }
-        @media (min-width: 1024px) {
-          .sidebar-closed {
-            width: 0 !important;
-            min-width: 0 !important;
-            margin-left: -260px !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            overflow: hidden !important;
-          }
-          .sidebar-open {
-            width: 260px !important;
-            min-width: 260px !important;
-            margin-left: 0 !important;
-            opacity: 1 !important;
-          }
+        .sidebar-open {
+          width: 260px !important;
+          min-width: 260px !important;
+          margin-left: 0 !important;
+          opacity: 1 !important;
         }
       `}</style>
     </>
