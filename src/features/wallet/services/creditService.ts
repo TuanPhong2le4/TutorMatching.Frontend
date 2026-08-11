@@ -39,7 +39,8 @@ export const creditService = {
   },
 
   async deposit(amount: number): Promise<string> {
-    const res = await api.post<{ data: string }>('/Credits/deposit', { amount });
+    const returnUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const res = await api.post<{ data: string }>('/Credits/deposit', { amount, returnUrl });
     return res.data.data;
   },
 
