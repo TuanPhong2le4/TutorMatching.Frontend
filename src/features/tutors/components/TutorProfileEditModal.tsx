@@ -249,6 +249,11 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
 
       // Trigger catalog & homepage refresh immediately
       onProfileSaved();
+
+      // Return to the current interface and restore URL
+      setTimeout(() => {
+        onClose();
+      }, 700);
     } catch (err: any) {
       console.error('Failed to save tutor profile:', err);
       let errText = err?.response?.data?.messages?.[0] || err?.response?.data?.message || 'Có lỗi xảy ra khi lưu hồ sơ. Vui lòng thử lại.';
@@ -728,7 +733,7 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
                     boxShadow: '0 4px 14px rgba(56, 189, 248, 0.3)',
                   }}
                 >
-                  {saving ? '⏳ Đang Lưu...' : '💾 Lưu Thông Tin & Môn Học'}
+                  {saving ? '⏳ Đang Lưu...' : 'Update Profile'}
                 </button>
               </div>
             </form>
