@@ -425,8 +425,10 @@ export default function App() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (!token) return;
+
+    let isCancelled = false;
 
     // Connect directly to Azure backend hub for native WebSocket support
     const hubUrl = (import.meta as any).env?.VITE_HUB_URL || 'https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net/hubs/notifications';
@@ -440,14 +442,21 @@ export default function App() {
     connection
       .start()
       .then(() => {
-        console.log('SignalR connected to NotificationHub successfully.');
+        if (!isCancelled) {
+          console.log('SignalR connected to NotificationHub successfully.');
+        }
       })
       .catch((err) => {
-        console.error('SignalR NotificationHub connection failed:', err);
+        if (isCancelled || err?.name === 'AbortError' || err?.message?.includes('stopped during negotiation')) {
+          // Expected lifecycle cleanup when React mounts/remounts or user navigates
+          return;
+        }
+        console.warn('SignalR NotificationHub connection note:', err?.message || err);
       });
 
     // Listen to real-time incoming notification events
     connection.on('ReceiveNotification', (notification: NotificationDto) => {
+      if (isCancelled) return;
       console.log('Received real-time notification:', notification);
 
       // Add to notifications list
@@ -482,7 +491,8 @@ export default function App() {
     });
 
     return () => {
-      connection.stop().then(() => console.log('SignalR connection stopped.'));
+      isCancelled = true;
+      connection.stop().catch(() => {});
     };
   }, [isAuthenticated]);
 
