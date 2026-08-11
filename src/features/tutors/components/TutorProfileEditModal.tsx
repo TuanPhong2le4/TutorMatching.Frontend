@@ -301,6 +301,7 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
           boxShadow: '0 25px 50px rgba(0,0,0,0.7)',
         }}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
@@ -404,10 +405,36 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
                     </span>
                   </div>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
                     maxLength={15}
                     value={phone}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Allow navigation and editing control keys (Backspace, Delete, Tab, Arrows, Home, End, Enter, Escape, Ctrl/Cmd shortcuts)
+                      if (
+                        ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', 'Escape'].includes(e.key) ||
+                        e.ctrlKey ||
+                        e.metaKey
+                      ) {
+                        return;
+                      }
+                      // Strictly block any non-digit character (letters, spaces, symbols)
+                      if (!/^[0-9]$/.test(e.key)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '');
+                      handlePhoneChange(digits);
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pasted = e.clipboardData.getData('text');
+                      const digits = pasted.replace(/\D/g, '');
+                      const newPhone = (phone + digits).slice(0, 15);
+                      handlePhoneChange(newPhone);
+                    }}
                     placeholder="Ví dụ: 0988123456"
                     style={{
                       width: '100%',
