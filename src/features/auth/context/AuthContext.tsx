@@ -35,9 +35,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(null);
     };
 
+    const handleForceLogout = (e: Event) => {
+      const customEvent = e as CustomEvent<{ message?: string }>;
+      const msg = customEvent.detail?.message || 'Tài khoản của bạn đã được đăng nhập ở nơi khác.';
+
+      authService.logout();
+      setUser(null);
+      setToken(null);
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', '/login');
+      }
+      alert(msg);
+    };
+
     window.addEventListener('auth:unauthorized', handleUnauthorized);
+    window.addEventListener('auth:force_logout', handleForceLogout);
     return () => {
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      window.removeEventListener('auth:force_logout', handleForceLogout);
     };
   }, []);
 

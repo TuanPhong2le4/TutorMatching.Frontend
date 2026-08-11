@@ -454,6 +454,13 @@ export default function App() {
         console.warn('SignalR NotificationHub connection note:', err?.message || err);
       });
 
+    // Listen for single-session eviction event (ForceLogout when another user logs into the same account)
+    connection.on('ForceLogout', (data: { message?: string }) => {
+      if (isCancelled) return;
+      const message = data?.message || 'Tài khoản của bạn đã được đăng nhập ở nơi khác.';
+      window.dispatchEvent(new CustomEvent('auth:force_logout', { detail: { message } }));
+    });
+
     // Listen to real-time incoming notification events
     connection.on('ReceiveNotification', (notification: NotificationDto) => {
       if (isCancelled) return;
