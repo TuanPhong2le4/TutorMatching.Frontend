@@ -808,7 +808,18 @@ export default function App() {
 
   // IF AUTHENTICATED: Render Main Application & Dashboard Page
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090d16', color: '#f8fafc' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        backgroundImage: 'linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.82)), url("/dashboard-bg.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+        color: '#f8fafc',
+      }}
+    >
       {/* Vertical Sidebar Matching Target UI */}
       <Sidebar
         activeTab={activeTab}
@@ -819,7 +830,17 @@ export default function App() {
       />
 
       {/* Main Content Area Container */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh', overflowX: 'hidden' }}>
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          minHeight: '100vh',
+          overflowX: 'hidden',
+          backgroundColor: 'transparent',
+        }}
+      >
         {/* Top Header Navigation */}
         <Header
           user={user}

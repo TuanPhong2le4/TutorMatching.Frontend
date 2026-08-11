@@ -63,7 +63,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         style={{
           width: '260px',
           minWidth: '260px',
-          backgroundColor: '#0c1222',
+          backgroundColor: 'rgba(12, 18, 34, 0.94)',
+          backdropFilter: 'blur(16px)',
           borderRight: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           flexDirection: 'column',
