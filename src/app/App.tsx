@@ -9,7 +9,7 @@ import { CenterNotifications, notificationService, NotificationDropdown, type No
 
 // Phase 6 imports
 import { HubConnectionBuilder } from '@microsoft/signalr';
-import { ToastContainer, type ToastItem } from '../shared';
+import { ToastContainer, Sidebar, Header, type ToastItem } from '../shared';
 
 export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -282,6 +282,10 @@ export default function App() {
 
   // Review detail popup state for viewing reviews
   const [viewReviewDetails, setViewReviewDetails] = useState<BookingDto | null>(null);
+
+  // Sidebar collapse state (Desktop) & Mobile drawer state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // Grouped Booking state for Tutor multiple student viewer modal
   const [viewGroupedBooking, setViewGroupedBooking] = useState<GroupedBooking | null>(null);
@@ -714,250 +718,94 @@ export default function App() {
     return <AuthPage />;
   }
 
-  // IF AUTHENTICATED: Render Main Application & Dashboard Page
+  // Calculate unread center notification count
+  const unreadCenterNotificationCount = notifications.filter(
+    (n) =>
+      (n.type === 'System' ||
+        n.type === 'TutorApproved' ||
+        n.type === 'TutorRejected' ||
+        n.type === 'OverdueClassWarning') &&
+      !n.isRead
+  ).length;
+
+  // IF AUTHENTICATED: Render Main Application with Vertical Sidebar Layout
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Header Navigation */}
-      <header
-        className="glass-panel"
-        style={{
-          margin: '16px 24px',
-          padding: '16px 32px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => handleTabChange('home')}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #38bdf8, #a855f7)', display: 'grid', placeItems: 'center', fontWeight: 'bold', fontSize: '20px' }}>
-            T
-          </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700' }} className="gradient-text">TutorMatching</h1>
-        </div>
+    <div style={{ minHeight: '100vh', display: 'flex', backgroundColor: '#090e1a', color: '#fff' }}>
+      {/* 1. Left Vertical Sidebar Navigation (Desktop Sticky + Mobile Drawer) */}
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        role={user?.role}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        unreadCenterNotificationCount={unreadCenterNotificationCount}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
 
-        <nav style={{ display: 'flex', gap: '24px' }}>
-          <button 
-            onClick={() => handleTabChange('home')}
-            style={{ background: 'none', border: 'none', color: activeTab === 'home' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-            Trang Chủ
-          </button>
-          <button 
-            onClick={() => handleTabChange('tutors')}
-            style={{ background: 'none', border: 'none', color: activeTab === 'tutors' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-            🔍 Tìm Gia Sư
-          </button>
-          <button 
-            onClick={() => handleTabChange('bookings')}
-            style={{ background: 'none', border: 'none', color: activeTab === 'bookings' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-            🗓️ Lịch Học
-          </button>
-          <button 
-            onClick={() => handleTabChange('wallet')}
-            style={{ background: 'none', border: 'none', color: activeTab === 'wallet' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-            {Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Quản Lý Nạp Tiền' : '💎 Ví Tín Dụng'}
-          </button>
-          {(Number(user?.role) === 0 || user?.role === 'Admin') && (
-            <>
-              <button 
-                onClick={() => handleTabChange('admin-reviews')}
-                style={{ background: 'none', border: 'none', color: activeTab === 'admin-reviews' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-                👑 Quản Lý Đánh Giá
-              </button>
-              <button 
-                onClick={() => handleTabChange('admin-users')}
-                style={{ background: 'none', border: 'none', color: activeTab === 'admin-users' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-                👥 Quản Lý Người Dùng
-              </button>
-              <button 
-                onClick={() => handleTabChange('admin-subjects')}
-                style={{ background: 'none', border: 'none', color: activeTab === 'admin-subjects' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-                📚 Quản Lý Môn Học
-              </button>
-              <button 
-                onClick={() => handleTabChange('admin-tutors')}
-                style={{ background: 'none', border: 'none', color: activeTab === 'admin-tutors' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-                📝 Duyệt Hồ Sơ Gia Sư
-              </button>
-              <button 
-                onClick={() => handleTabChange('admin-revenue')}
-                style={{ background: 'none', border: 'none', color: activeTab === 'admin-revenue' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-                📈 Doanh Thu
-              </button>
-            </>
-          )}
-          {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
-            <>
-              <button 
-                onClick={() => handleTabChange('progress')}
-                style={{ background: 'none', border: 'none', color: activeTab === 'progress' ? '#38bdf8' : '#94a3b8', cursor: 'pointer', fontWeight: 600, fontSize: '15px' }}>
-                🎯 Tiến Độ Học
-              </button>
-              <button 
-                onClick={() => handleTabChange('center-notifications')}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  color: activeTab === 'center-notifications' ? '#38bdf8' : '#94a3b8', 
-                  cursor: 'pointer', 
-                  fontWeight: 600, 
-                  fontSize: '15px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                📢 Thông báo Trung tâm
-                {notifications.filter(n => (n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected' || n.type === 'OverdueClassWarning') && !n.isRead).length > 0 && (
-                  <span style={{
-                    backgroundColor: '#ef4444',
-                    color: '#fff',
-                    borderRadius: '50%',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    padding: '2.5px 7px',
-                    lineHeight: 1,
-                    display: 'inline-block',
-                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)'
-                  }}>
-                    {notifications.filter(n => (n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected' || n.type === 'OverdueClassWarning') && !n.isRead).length}
-                  </span>
-                )}
-              </button>
-            </>
-          )}
-        </nav>
+      {/* 2. Right Main Content Column */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflowX: 'hidden' }}>
+        {/* Top Header */}
+        <Header
+          user={user}
+          walletBalance={walletBalance}
+          isTutorRole={isTutorRole}
+          isAdmin={isAdmin}
+          onOpenProfileEdit={() => handleOpenProfileEdit(true)}
+          onChangePassword={() => setIsChangePasswordOpen(true)}
+          onLogout={logout}
+          onTabChange={handleTabChange}
+          onToggleSidebar={() => {
+            if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+              setIsMobileSidebarOpen((prev) => !prev);
+            } else {
+              setIsSidebarCollapsed((prev) => !prev);
+            }
+          }}
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onRefreshNotifications={fetchNotifications}
+          onMarkNotificationRead={handleMarkNotificationRead}
+          onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+        />
 
-        {/* User Profile & Logout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {isTutorRole && (
-            <button
-              onClick={() => handleOpenProfileEdit(true)}
-              style={{
-                background: 'rgba(56, 189, 248, 0.15)',
-                border: '1px solid #38bdf8',
-                color: '#38bdf8',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              ⚙️ Cập Nhật Hồ Sơ Gia Sư
-            </button>
-          )}
-
-          {/* Wallet Balance Pill */}
-          {(Number(user?.role) !== 0 && user?.role !== 'Admin') && (
-            <div
-              onClick={() => handleTabChange('wallet')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                color: '#c084fc',
-                padding: '6px 12px',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 700,
-                transition: 'all 0.2s',
-              }}
-              title="Xem ví tín dụng"
-            >
-              <span>💎</span>
-              <span>{walletBalance !== null ? walletBalance.toFixed(1) : '...'} tc</span>
-            </div>
-          )}
-
-          {/* Phase 6 Notification Bell Dropdown */}
-          <NotificationDropdown
-            notifications={notifications}
-            unreadCount={unreadCount}
-            onRefresh={fetchNotifications}
-            onMarkRead={handleMarkNotificationRead}
-            onMarkAllRead={handleMarkAllNotificationsRead}
-            onNavigate={(tab) => handleTabChange(tab as any)}
-          />
-
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <span style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc' }}>{user?.fullName}</span>
-            <span style={{ fontSize: '12px', color: '#38bdf8' }}>
-              {Number(user?.role) === 2 || user?.role === 'Student' ? '🎓 Học Viên' : isTutorRole ? '👨‍🏫 Gia Sư' : '👑 Admin'}
-            </span>
-          </div>
-
-          {!isAdmin && (
-            <button
-              onClick={() => setIsChangePasswordOpen(true)}
-              style={{
-                background: 'rgba(56, 189, 248, 0.15)',
-                border: '1px solid rgba(56, 189, 248, 0.35)',
-                color: '#38bdf8',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              🔑 Đổi Mật Khẩu
-            </button>
-          )}
-
-          <button
-            onClick={logout}
+        {/* Booking Notice Toast Alert */}
+        {bookingNotice && (
+          <div
             style={{
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
+              margin: '16px 20px 0',
+              padding: '12px 20px',
+              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              color: '#38bdf8',
+              borderRadius: '10px',
               fontSize: '14px',
-              fontWeight: 500,
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              maxWidth: '1440px',
+              width: 'calc(100% - 40px)',
+              alignSelf: 'center',
+              boxSizing: 'border-box',
             }}
           >
-            Đăng Xuất
-          </button>
-        </div>
-      </header>
+            <span>🎉 {bookingNotice}</span>
+            <button onClick={() => setBookingNotice(null)} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer' }}>✕</button>
+          </div>
+        )}
 
-      {/* Booking Notice Toast Alert */}
-      {bookingNotice && (
-        <div
+        {/* Main Content Area: Always Centered on large screens */}
+        <main
           style={{
-            margin: '0 24px 16px',
-            padding: '12px 20px',
-            backgroundColor: 'rgba(56, 189, 248, 0.15)',
-            border: '1px solid rgba(56, 189, 248, 0.4)',
-            color: '#38bdf8',
-            borderRadius: '10px',
-            fontSize: '14px',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            flex: 1,
+            padding: 'clamp(14px, 2.5vw, 28px)',
+            maxWidth: '1440px',
+            margin: '0 auto',
+            width: '100%',
+            boxSizing: 'border-box',
           }}
         >
-          <span>🎉 {bookingNotice}</span>
-          <button onClick={() => setBookingNotice(null)} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer' }}>✕</button>
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '16px 24px 48px', maxWidth: '1240px', margin: '0 auto', width: '100%' }}>
         {/* Tab 1: Home Page */}
         {isTabMounted('home') && (
           <div style={{ display: activeTab === 'home' ? 'block' : 'none' }}>
@@ -3005,9 +2853,10 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '20px 28px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
         © 2026 TutorMatching App | Connected to TutorPlatform.API
       </footer>
+      </div>
     </div>
   );
 }
