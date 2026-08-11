@@ -42,21 +42,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Touch Backdrop Overlay */}
-      {isOpen && (
-        <div
-          onClick={onClose}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            zIndex: 998,
-            display: 'block',
-          }}
-          className="lg:hidden"
-        />
-      )}
-
       {/* Vertical Sidebar */}
       <aside
         style={{
