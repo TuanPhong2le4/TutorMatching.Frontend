@@ -62,7 +62,7 @@ export default function App() {
       setActiveTab('home');
     }
   }
-  const [isProfileEditOpen, setIsProfileEditOpen] = useState<boolean>(false);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState<boolean>(() => window.location.pathname === '/profile');
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState<boolean>(false);
   const [tutorProfileState, setTutorProfileState] = useState<{
     bio?: string;
@@ -814,7 +814,7 @@ export default function App() {
           onMarkNotificationRead={handleMarkNotificationRead}
           onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
           onNavigateTab={handleTabChange}
-          onOpenProfileEdit={() => setIsProfileEditOpen(true)}
+          onOpenProfileEdit={() => handleOpenProfileEdit(true)}
           onOpenChangePassword={() => setIsChangePasswordOpen(true)}
           onLogout={handleLogout}
         />
@@ -2892,7 +2892,7 @@ export default function App() {
       {/* Tutor Profile Edit Modal */}
       <TutorProfileEditModal
         isOpen={isProfileEditOpen}
-        onClose={() => setIsProfileEditOpen(false)}
+        onClose={() => handleOpenProfileEdit(false)}
         onProfileSaved={() => {
           fetchTutors();
           fetchWalletBalance();
