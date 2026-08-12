@@ -1923,7 +1923,7 @@ export default function App() {
         )}
 
         {/* Tab 9: Center Notifications */}
-        {isTabMounted('center-notifications') && (
+        {(isTabMounted('center-notifications') || isTabMounted('admin-notifications')) && (
           <div style={{ display: activeTab === 'center-notifications' || activeTab === 'admin-notifications' ? 'block' : 'none' }}>
             <CenterNotifications
               onNotificationsUpdated={fetchNotifications}
