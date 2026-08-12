@@ -187,7 +187,14 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  max={endDate || undefined}
+                  onChange={(e) => {
+                    const newStart = e.target.value;
+                    setStartDate(newStart);
+                    if (endDate && newStart && endDate < newStart) {
+                      setEndDate(newStart);
+                    }
+                  }}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
@@ -220,7 +227,15 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                 <input
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate || undefined}
+                  onChange={(e) => {
+                    const newEnd = e.target.value;
+                    if (startDate && newEnd && newEnd < startDate) {
+                      setEndDate(startDate);
+                    } else {
+                      setEndDate(newEnd);
+                    }
+                  }}
                   style={{
                     backgroundColor: 'transparent',
                     border: 'none',
@@ -239,8 +254,14 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
 
           <button
             onClick={() => {
-              setAppliedStartDate(startDate);
-              setAppliedEndDate(endDate);
+              let validStart = startDate;
+              let validEnd = endDate;
+              if (validStart && validEnd && validEnd < validStart) {
+                validEnd = validStart;
+                setEndDate(validStart);
+              }
+              setAppliedStartDate(validStart);
+              setAppliedEndDate(validEnd);
               setAdminPage(1);
             }}
             style={{
