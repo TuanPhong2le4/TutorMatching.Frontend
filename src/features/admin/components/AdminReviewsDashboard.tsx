@@ -97,19 +97,49 @@ export const AdminReviewsDashboard: React.FC = () => {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              maxLength={300}
+              onChange={(e) => setSearch(e.target.value.substring(0, 300))}
+              onKeyDown={(e) => {
+                if (search.length >= 300) {
+                  const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
+                  const isShortcut = (e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase());
+                  if (!allowedKeys.includes(e.key) && !isShortcut) {
+                    e.preventDefault();
+                  }
+                }
+              }}
+              onPaste={(e) => {
+                const pasteText = e.clipboardData.getData('text');
+                const spaceLeft = 300 - search.length;
+                if (spaceLeft <= 0) {
+                  e.preventDefault();
+                  return;
+                }
+                if (pasteText.length > spaceLeft) {
+                  e.preventDefault();
+                  setSearch(search + pasteText.substring(0, spaceLeft));
+                }
+              }}
               placeholder="Nhập tên người dùng hoặc từ khóa..."
               style={{
                 width: '100%',
                 padding: '8px 12px',
                 borderRadius: '8px',
                 backgroundColor: 'rgba(15,23,42,0.6)',
-                border: '1px solid rgba(255,255,255,0.15)',
+                border: search.length >= 300 ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
                 color: '#fff',
                 fontSize: '14px',
                 outline: 'none',
               }}
             />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', padding: '0 2px', fontSize: '11px' }}>
+              {search.length >= 300 ? (
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>⚠️ Vui lòng không nhập quá ký tự cho phép (Bàn phím đã bị khóa)</span>
+              ) : (
+                <span style={{ color: '#64748b' }}>Tối đa 300 ký tự</span>
+              )}
+              <span style={{ color: search.length >= 300 ? '#ef4444' : '#94a3b8' }}>{search.length}/300</span>
+            </div>
           </div>
 
           {/* Review Type */}

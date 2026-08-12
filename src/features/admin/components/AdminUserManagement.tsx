@@ -195,21 +195,51 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ initia
             type="text"
             placeholder={`Tìm kiếm ${roleLabel} theo tên hoặc email...`}
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            maxLength={300}
+            onChange={(e) => setSearchInput(e.target.value.substring(0, 300))}
+            onKeyDown={(e) => {
+              if (searchInput.length >= 300) {
+                const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
+                const isShortcut = (e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase());
+                if (!allowedKeys.includes(e.key) && !isShortcut) {
+                  e.preventDefault();
+                }
+              }
+            }}
+            onPaste={(e) => {
+              const pasteText = e.clipboardData.getData('text');
+              const spaceLeft = 300 - searchInput.length;
+              if (spaceLeft <= 0) {
+                e.preventDefault();
+                return;
+              }
+              if (pasteText.length > spaceLeft) {
+                e.preventDefault();
+                setSearchInput(searchInput + pasteText.substring(0, spaceLeft));
+              }
+            }}
             style={{
               width: '100%',
               padding: '10px 14px',
               borderRadius: '10px',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: searchInput.length >= 300 ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
               backgroundColor: 'rgba(15, 23, 42, 0.6)',
               color: '#fff',
               fontSize: '14px',
               outline: 'none',
               transition: 'border-color 0.2s',
             }}
-            onFocus={(e) => (e.target.style.borderColor = isTutorTab ? '#a855f7' : '#38bdf8')}
-            onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
+            onFocus={(e) => (e.target.style.borderColor = searchInput.length >= 300 ? '#ef4444' : isTutorTab ? '#a855f7' : '#38bdf8')}
+            onBlur={(e) => (e.target.style.borderColor = searchInput.length >= 300 ? '#ef4444' : 'rgba(255,255,255,0.1)')}
           />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', padding: '0 2px', fontSize: '11px' }}>
+            {searchInput.length >= 300 ? (
+              <span style={{ color: '#ef4444', fontWeight: 600 }}>⚠️ Vui lòng không nhập quá ký tự cho phép (Bàn phím đã bị khóa)</span>
+            ) : (
+              <span style={{ color: '#64748b' }}>Tối đa 300 ký tự</span>
+            )}
+            <span style={{ color: searchInput.length >= 300 ? '#ef4444' : '#94a3b8' }}>{searchInput.length}/300</span>
+          </div>
         </div>
 
         {/* Active filter */}

@@ -12,6 +12,8 @@ interface TutorSearchFilterProps {
   onReset: () => void;
 }
 
+const SEARCH_MAX_LEN = 300;
+
 export const TutorSearchFilter: React.FC<TutorSearchFilterProps> = ({
   searchTerm,
   onSearchChange,
@@ -22,6 +24,44 @@ export const TutorSearchFilter: React.FC<TutorSearchFilterProps> = ({
   subjects,
   onReset,
 }) => {
+  const isOverLimit = searchTerm.length >= SEARCH_MAX_LEN;
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (searchTerm.length >= SEARCH_MAX_LEN) {
+      const allowedKeys = [
+        'Backspace',
+        'Delete',
+        'ArrowLeft',
+        'ArrowRight',
+        'ArrowUp',
+        'ArrowDown',
+        'Tab',
+        'Home',
+        'End',
+        'Enter',
+        'Escape',
+      ];
+      const isShortcut = (e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase());
+      if (!allowedKeys.includes(e.key) && !isShortcut) {
+        e.preventDefault();
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasteText = e.clipboardData.getData('text');
+    const spaceLeft = SEARCH_MAX_LEN - searchTerm.length;
+    if (spaceLeft <= 0) {
+      e.preventDefault();
+      return;
+    }
+    if (pasteText.length > spaceLeft) {
+      e.preventDefault();
+      const truncated = searchTerm + pasteText.substring(0, spaceLeft);
+      onSearchChange(truncated);
+    }
+  };
+
   return (
     <div
       className="glass-panel"
@@ -40,13 +80,16 @@ export const TutorSearchFilter: React.FC<TutorSearchFilterProps> = ({
         <input
           type="text"
           value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
+          maxLength={SEARCH_MAX_LEN}
+          onChange={(e) => onSearchChange(e.target.value.substring(0, SEARCH_MAX_LEN))}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           placeholder="🔍 Tìm kiếm gia sư theo tên, môn học hoặc từ khóa kinh nghiệm..."
           style={{
             width: '100%',
             padding: '14px 20px',
             borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
+            border: isOverLimit ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.15)',
             backgroundColor: 'rgba(15, 23, 42, 0.7)',
             color: '#fff',
             fontSize: '15px',
@@ -54,6 +97,19 @@ export const TutorSearchFilter: React.FC<TutorSearchFilterProps> = ({
             boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
           }}
         />
+        {/* Character Limit Indicator & Warning */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', padding: '0 4px', fontSize: '12px' }}>
+          {isOverLimit ? (
+            <span style={{ color: '#ef4444', fontWeight: 600 }}>
+              ⚠️ Vui lòng không nhập quá ký tự cho phép (Tối đa 300 ký tự - Bàn phím đã bị khóa)
+            </span>
+          ) : (
+            <span style={{ color: '#64748b' }}>Tối đa 300 ký tự</span>
+          )}
+          <span style={{ color: isOverLimit ? '#ef4444' : '#94a3b8', fontWeight: isOverLimit ? 700 : 500 }}>
+            {searchTerm.length}/{SEARCH_MAX_LEN}
+          </span>
+        </div>
       </div>
 
       {/* Filter Dropdowns & Controls */}
