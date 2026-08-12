@@ -1004,7 +1004,29 @@ export const LearningProgressDashboard: React.FC = () => {
                 </label>
                 <textarea
                   value={progressNotes}
-                  onChange={(e) => setProgressNotes(e.target.value)}
+                  maxLength={500}
+                  onChange={(e) => setProgressNotes(e.target.value.substring(0, 500))}
+                  onKeyDown={(e) => {
+                    if (progressNotes.length >= 500) {
+                      const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
+                      const isShortcut = (e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase());
+                      if (!allowedKeys.includes(e.key) && !isShortcut) {
+                        e.preventDefault();
+                      }
+                    }
+                  }}
+                  onPaste={(e) => {
+                    const pasteText = e.clipboardData.getData('text');
+                    const spaceLeft = 500 - progressNotes.length;
+                    if (spaceLeft <= 0) {
+                      e.preventDefault();
+                      return;
+                    }
+                    if (pasteText.length > spaceLeft) {
+                      e.preventDefault();
+                      setProgressNotes(progressNotes + pasteText.substring(0, spaceLeft));
+                    }
+                  }}
                   rows={3}
                   placeholder="Ghi nhận cụ thể, kết quả kiểm tra hoặc các bài tập đã hoàn tất..."
                   style={{
@@ -1012,12 +1034,24 @@ export const LearningProgressDashboard: React.FC = () => {
                     padding: '10px',
                     borderRadius: '8px',
                     backgroundColor: 'rgba(15,23,42,0.6)',
-                    border: '1px solid rgba(255,255,255,0.15)',
+                    border: progressNotes.length >= 500 ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
                     color: '#fff',
                     outline: 'none',
                     resize: 'none',
                   }}
                 />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px' }}>
+                  {progressNotes.length >= 500 ? (
+                    <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                      ⚠️ Vui lòng không nhập quá 500 ký tự cho phép (Bàn phím đã bị khóa)
+                    </span>
+                  ) : (
+                    <span style={{ color: '#64748b' }}>Tối đa 500 ký tự</span>
+                  )}
+                  <span style={{ color: progressNotes.length >= 500 ? '#ef4444' : '#94a3b8', fontWeight: progressNotes.length >= 500 ? 700 : 500 }}>
+                    {progressNotes.length}/500
+                  </span>
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>

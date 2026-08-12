@@ -175,13 +175,35 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             </label>
             <textarea
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              maxLength={500}
+              onChange={(e) => setComment(e.target.value.substring(0, 500))}
+              onKeyDown={(e) => {
+                if (comment.length >= 500) {
+                  const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
+                  const isShortcut = (e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase());
+                  if (!allowedKeys.includes(e.key) && !isShortcut) {
+                    e.preventDefault();
+                  }
+                }
+              }}
+              onPaste={(e) => {
+                const pasteText = e.clipboardData.getData('text');
+                const spaceLeft = 500 - comment.length;
+                if (spaceLeft <= 0) {
+                  e.preventDefault();
+                  return;
+                }
+                if (pasteText.length > spaceLeft) {
+                  e.preventDefault();
+                  setComment(comment + pasteText.substring(0, spaceLeft));
+                }
+              }}
               rows={4}
               placeholder={isTutor ? "Nhận xét thái độ, ý thức học tập và sự tiếp thu kiến thức của học viên trong buổi học..." : "Chia sẻ trải nghiệm học tập của bạn cùng gia sư này để giúp các học viên khác lựa chọn..."}
               style={{
                 width: '100%',
                 backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                border: comment.length >= 500 ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '12px',
                 padding: '12px',
                 color: '#fff',
@@ -190,6 +212,18 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 resize: 'none',
               }}
             />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px' }}>
+              {comment.length >= 500 ? (
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                  ⚠️ Vui lòng không nhập quá 500 ký tự cho phép (Bàn phím đã bị khóa)
+                </span>
+              ) : (
+                <span style={{ color: '#64748b' }}>Tối đa 500 ký tự</span>
+              )}
+              <span style={{ color: comment.length >= 500 ? '#ef4444' : '#94a3b8', fontWeight: comment.length >= 500 ? 700 : 500 }}>
+                {comment.length}/500
+              </span>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>

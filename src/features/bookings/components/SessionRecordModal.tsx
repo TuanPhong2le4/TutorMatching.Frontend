@@ -119,13 +119,35 @@ export const SessionRecordModal: React.FC<SessionRecordModalProps> = ({
             </label>
             <textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              maxLength={500}
+              onChange={(e) => setNotes(e.target.value.substring(0, 500))}
+              onKeyDown={(e) => {
+                if (notes.length >= 500) {
+                  const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
+                  const isShortcut = (e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase());
+                  if (!allowedKeys.includes(e.key) && !isShortcut) {
+                    e.preventDefault();
+                  }
+                }
+              }}
+              onPaste={(e) => {
+                const pasteText = e.clipboardData.getData('text');
+                const spaceLeft = 500 - notes.length;
+                if (spaceLeft <= 0) {
+                  e.preventDefault();
+                  return;
+                }
+                if (pasteText.length > spaceLeft) {
+                  e.preventDefault();
+                  setNotes(notes + pasteText.substring(0, spaceLeft));
+                }
+              }}
               rows={4}
               placeholder="Ghi nhận thái độ học tập, các mảng kiến thức đã làm tốt hoặc cần cải thiện của học viên..."
               style={{
                 width: '100%',
                 backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                border: notes.length >= 500 ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '12px',
                 padding: '12px',
                 color: '#fff',
@@ -134,6 +156,18 @@ export const SessionRecordModal: React.FC<SessionRecordModalProps> = ({
                 resize: 'none',
               }}
             />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px' }}>
+              {notes.length >= 500 ? (
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                  ⚠️ Vui lòng không nhập quá 500 ký tự cho phép (Bàn phím đã bị khóa)
+                </span>
+              ) : (
+                <span style={{ color: '#64748b' }}>Tối đa 500 ký tự</span>
+              )}
+              <span style={{ color: notes.length >= 500 ? '#ef4444' : '#94a3b8', fontWeight: notes.length >= 500 ? 700 : 500 }}>
+                {notes.length}/500
+              </span>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>
