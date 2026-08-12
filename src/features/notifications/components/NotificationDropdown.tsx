@@ -283,11 +283,6 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                       >
                         {n.title}
                       </div>
-                      {!isAdmin && (
-                        <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px', lineHeight: '1.4' }}>
-                          {n.message}
-                        </div>
-                      )}
                       <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
                         {getElapsedTime(n.createdAt)}
                       </div>
