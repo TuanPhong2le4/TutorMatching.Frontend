@@ -39,6 +39,8 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({
   };
 
   useEffect(() => {
+    // Reset selected complaint when switching tabs or loading
+    setSelectedComplaint(null);
     fetchCenterNotifications();
   }, [isAdmin]);
 
@@ -112,6 +114,127 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({
     }
   };
 
+  // IF A COMPLAINT IS SELECTED: Render clean direct Card View (Matching Hình 2, no overlay)
+  if (selectedComplaint) {
+    return (
+      <div
+        className="glass-panel"
+        style={{
+          padding: '28px',
+          borderRadius: '16px',
+          border: '1px solid rgba(251, 191, 36, 0.4)',
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        {/* Top Header with Back Button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => setSelectedComplaint(null)}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: '#38bdf8',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              ⬅️ Quay lại danh sách
+            </button>
+            <span style={{ fontSize: '24px' }}>🚩</span>
+            <h3 style={{ margin: 0, color: '#fbbf24', fontSize: '20px', fontWeight: 700 }}>
+              Chi Tiết Khiếu Nại Của Học Sinh
+            </h3>
+          </div>
+          <button
+            onClick={() => setSelectedComplaint(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#94a3b8',
+              fontSize: '22px',
+              cursor: 'pointer',
+            }}
+            title="Đóng chi tiết khiếu nại"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Title */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '13px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Tiêu đề thông báo:</label>
+          <div style={{ fontWeight: 600, color: '#fff', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🚩</span>
+            <span>{selectedComplaint.title}</span>
+          </div>
+        </div>
+
+        {/* Message details box */}
+        <div style={{ marginBottom: '24px', backgroundColor: 'rgba(251, 191, 36, 0.06)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.25)' }}>
+          <label style={{ fontSize: '13px', color: '#fbbf24', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+            📝 Lý do khiếu nại chi tiết từ học sinh:
+          </label>
+          <div style={{ color: '#f1f5f9', fontSize: '15px', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontWeight: 500 }}>
+            "{selectedComplaint.message}"
+          </div>
+        </div>
+
+        {/* Timestamp */}
+        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          ⏰ Thời gian gửi khiếu nại: <strong>{formatDate(selectedComplaint.createdAt)}</strong>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setSelectedComplaint(null)}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: '#cbd5e1',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 600,
+            }}
+          >
+            Đóng
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedComplaint(null);
+              if (onNavigate) onNavigate('bookings');
+            }}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#a855f7',
+              border: 'none',
+              color: '#fff',
+              borderRadius: '8px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontSize: '14px',
+              boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+            }}
+          >
+            🗓️ Chuyển Tới Quản Lý Lịch Học (/bookings)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // MAIN NOTIFICATION LIST VIEW
   return (
     <div
       className="glass-panel"
@@ -416,113 +539,6 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Modal for detailed Complaint View */}
-      {selectedComplaint && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(6px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 99999,
-            padding: '20px',
-          }}
-          onClick={() => setSelectedComplaint(null)}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '560px',
-              backgroundColor: '#0f172a',
-              borderRadius: '16px',
-              border: '1px solid rgba(251, 191, 36, 0.4)',
-              padding: '24px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '24px' }}>🚩</span>
-                <h3 style={{ margin: 0, color: '#fbbf24', fontSize: '18px', fontWeight: 700 }}>
-                  Chi Tiết Khiếu Nại Của Học Sinh
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedComplaint(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#94a3b8',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Tiêu đề thông báo:</label>
-              <div style={{ fontWeight: 600, color: '#fff', fontSize: '15px' }}>{selectedComplaint.title}</div>
-            </div>
-
-            <div style={{ marginBottom: '20px', backgroundColor: 'rgba(251, 191, 36, 0.06)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-              <label style={{ fontSize: '12px', color: '#fbbf24', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-                📝 Lý do khiếu nại chi tiết từ học sinh:
-              </label>
-              <div style={{ color: '#f1f5f9', fontSize: '14px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-                "{selectedComplaint.message}"
-              </div>
-            </div>
-
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '20px' }}>
-              ⏰ Thời gian gửi khiếu nại: {formatDate(selectedComplaint.createdAt)}
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setSelectedComplaint(null)}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: '#cbd5e1',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                }}
-              >
-                Đóng
-              </button>
-
-              <button
-                onClick={() => {
-                  setSelectedComplaint(null);
-                  if (onNavigate) onNavigate('bookings');
-                }}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#a855f7',
-                  border: 'none',
-                  color: '#fff',
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                }}
-              >
-                🗓️ Chuyển Tới Quản Lý Lịch Học (/bookings)
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>
