@@ -27,6 +27,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
   // Date filter query states
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [dateError, setDateError] = useState<string | null>(null);
 
   // Applied date filter states for query execution
   const [appliedStartDate, setAppliedStartDate] = useState<string>('');
@@ -191,6 +192,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                   onChange={(e) => {
                     const newStart = e.target.value;
                     setStartDate(newStart);
+                    if (newStart) setDateError(null);
                     if (endDate && newStart && endDate < newStart) {
                       setEndDate(newStart);
                     }
@@ -235,6 +237,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                     } else {
                       setEndDate(newEnd);
                     }
+                    if (newEnd) setDateError(null);
                   }}
                   style={{
                     backgroundColor: 'transparent',
@@ -252,8 +255,47 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
             </div>
           </div>
 
+          {dateError && (
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                color: '#f87171',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                marginTop: '16px',
+                fontSize: '14px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{dateError}</span>
+            </div>
+          )}
+
           <button
             onClick={() => {
+              if (!startDate && !endDate) {
+                setDateError('Vui lòng chọn ngày bắt đầu và ngày kết thúc');
+                return;
+              }
+              if (!startDate) {
+                setDateError('Vui lòng chọn ngày bắt đầu');
+                return;
+              }
+              if (!endDate) {
+                setDateError('Vui lòng chọn ngày kết thúc');
+                return;
+              }
+
+              setDateError(null);
               let validStart = startDate;
               let validEnd = endDate;
               if (validStart && validEnd && validEnd < validStart) {
