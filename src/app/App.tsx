@@ -1923,9 +1923,13 @@ export default function App() {
         )}
 
         {/* Tab 9: Center Notifications */}
-        {!isAdmin && isTabMounted('center-notifications') && (
-          <div style={{ display: activeTab === 'center-notifications' ? 'block' : 'none' }}>
-            <CenterNotifications onNotificationsUpdated={fetchNotifications} />
+        {isTabMounted('center-notifications') && (
+          <div style={{ display: activeTab === 'center-notifications' || activeTab === 'admin-notifications' ? 'block' : 'none' }}>
+            <CenterNotifications
+              onNotificationsUpdated={fetchNotifications}
+              onNavigate={(tab) => handleTabChange(tab as TabType)}
+              isAdmin={isAdmin}
+            />
           </div>
         )}
       </main>
