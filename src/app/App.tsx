@@ -1539,22 +1539,13 @@ export default function App() {
                                         {!isGroup && !isAdmin && (
                                           <>
                                             {/* Student Cancel */}
-                                            {isStudentRole && (singleItem.status === 0 || singleItem.status === 1) && (
-                                              <button
-                                                onClick={() => setCancelBookingId(singleItem.id)}
-                                                style={{
-                                                  padding: '6px 12px',
-                                                  backgroundColor: 'rgba(239,68,68,0.15)',
-                                                  border: '1px solid rgba(239,68,68,0.3)',
-                                                  color: '#f87171',
-                                                  borderRadius: '6px',
-                                                  fontSize: '12px',
-                                                  cursor: 'pointer',
-                                                }}
-                                              >
-                                                ❌ Hủy Lịch
-                                              </button>
-                                            )}
+                                             {isStudentRole && (singleItem.status === 0 || singleItem.status === 1) && (
+                                               (new Date(singleItem.scheduledStartAt) <= new Date()) ? (
+                                                 <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', padding: '4px 8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', display: 'inline-flex', alignItems: 'center', gap: '4px' }} title="Buổi học đã diễn ra hoặc đang diễn ra, học viên không thể hủy lịch">🔒 Đang/đã diễn ra (Không thể hủy)</span>
+                                               ) : (
+                                                 <button onClick={() => setCancelBookingId(singleItem.id)} style={{ padding: '6px 12px', backgroundColor: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>❌ Hủy Lịch</button>
+                                               )
+                                             )}
 
                                             {/* Tutor: Pending Actions */}
                                             {isTutorRole && singleItem.status === 0 && (
