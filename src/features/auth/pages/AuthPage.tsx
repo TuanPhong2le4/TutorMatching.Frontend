@@ -80,7 +80,8 @@ export const AuthPage: React.FC = () => {
     const trimmed = val.trim();
     if (name === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!trimmed) return 'Vui lòng nhập địa chỉ Email.';
+      if (!trimmed) return 'Tài khoản không được để trống';
+      if (val.length >= 100) return 'Không được nhập quá số kí tự cho phép';
       if (!emailRegex.test(trimmed)) return 'Địa chỉ Email không đúng định dạng (VD: example@gmail.com).';
       
       if (mode === 'register') {
@@ -92,25 +93,39 @@ export const AuthPage: React.FC = () => {
     }
 
     if (name === 'password') {
-      if (!val) return 'Vui lòng nhập Mật khẩu.';
+      if (!val) return 'Mật khẩu không được để trống';
+      if (val.length >= 100) return 'Không được nhập quá số kí tự cho phép';
       if (val.includes(' ')) return 'Mật khẩu không được chứa khoảng trắng.';
       if (val.length < 6) return 'Mật khẩu phải có tối thiểu 6 ký tự.';
     }
 
     if (name === 'fullName' && mode === 'register') {
-      if (!trimmed) return 'Vui lòng nhập Họ và Tên.';
+      if (!trimmed) return 'Họ và tên không được để trống';
+      if (val.length >= 50) return 'Không được nhập quá số kí tự cho phép';
       if (trimmed.length < 2) return 'Họ và Tên phải có tối thiểu 2 ký tự.';
     }
 
     return undefined;
   };
 
-  const handleFieldChange = (name: 'email' | 'password' | 'fullName', val: string) => {
+  const handleFieldChange = (name: 'email' | 'password' | 'fullName', rawVal: string) => {
+    let max = 100;
+    if (name === 'fullName') max = 50;
+
+    let val = rawVal;
+    let isExceeded = false;
+    if (val.length > max) {
+      val = val.slice(0, max);
+      isExceeded = true;
+    }
+
     if (name === 'email') setEmail(val);
     if (name === 'password') setPassword(val);
     if (name === 'fullName') setFullName(val);
 
-    if (touchedFields[name] || name === 'email') {
+    if (isExceeded || val.length >= max) {
+      setFieldErrors((prev) => ({ ...prev, [name]: 'Không được nhập quá số kí tự cho phép' }));
+    } else if (touchedFields[name] || name === 'email') {
       const errorMsg = validateField(name, val);
       setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
     }
