@@ -638,11 +638,15 @@ export default function App() {
       setActiveTab('wallet');
       window.history.replaceState(null, '', '/wallet');
       fetchWalletBalance();
-      alert('🎉 Nạp tiền qua VNPAY thành công! Tín chỉ đã được cộng vào tài khoản của bạn.');
+      setTimeout(() => {
+        alert('🎉 Nạp tiền qua VNPAY thành công! Tín chỉ đã được cộng vào tài khoản của bạn.');
+      }, 400);
     } else if (paymentStatus === 'failed') {
       setActiveTab('wallet');
       window.history.replaceState(null, '', '/wallet');
-      alert('❌ Thanh toán qua VNPAY thất bại hoặc bị hủy bỏ.');
+      setTimeout(() => {
+        alert('❌ Thanh toán qua VNPAY thất bại hoặc bị hủy bỏ.');
+      }, 400);
     }
   }, [isAuthenticated]);
 
