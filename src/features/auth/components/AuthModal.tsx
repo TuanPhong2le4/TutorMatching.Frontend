@@ -354,11 +354,11 @@ export const AuthModal: React.FC = () => {
                 }}
               />
               {fieldErrors.fullName ? (
-                <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#ef4444' }}>
+                <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', minHeight: '18px', color: '#ef4444' }}>
                   ⚠️ {fieldErrors.fullName}
                 </span>
               ) : (
-                <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#64748b' }}>
+                <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', minHeight: '18px', color: '#64748b' }}>
                   💡 Ghi chú: Nhập đúng tên để hiển thị trên chứng chỉ & hồ sơ
                 </span>
               )}
@@ -388,11 +388,11 @@ export const AuthModal: React.FC = () => {
               }}
             />
             {fieldErrors.email ? (
-              <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#ef4444' }}>
+              <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', minHeight: '18px', color: '#ef4444' }}>
                 ⚠️ {fieldErrors.email}
               </span>
             ) : (
-              <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#64748b' }}>
+              <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', minHeight: '18px', color: '#64748b' }}>
                 💡 Ghi chú: Email hợp lệ (VD: name@gmail.com) dùng để nhận thông báo
               </span>
             )}
@@ -452,11 +452,11 @@ export const AuthModal: React.FC = () => {
               </button>
             </div>
             {fieldErrors.password ? (
-              <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#ef4444' }}>
+              <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', minHeight: '18px', color: '#ef4444' }}>
                 ⚠️ {fieldErrors.password}
               </span>
             ) : (
-              <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#64748b' }}>
+              <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', minHeight: '18px', color: '#64748b' }}>
                 💡 Ghi chú: Mật khẩu bắt buộc tối thiểu 6 ký tự
               </span>
             )}
@@ -526,7 +526,7 @@ export const AuthModal: React.FC = () => {
                 </button>
               </div>
               {fieldErrors.role && (
-                <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#ef4444' }}>
+                <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', minHeight: '18px', color: '#ef4444' }}>
                   ⚠️ {fieldErrors.role}
                 </span>
               )}
