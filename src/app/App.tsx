@@ -1730,6 +1730,9 @@ export default function App() {
                                                        setComplaintBookingId(singleItem.id);
                                                        setComplaintTutorName(singleItem.tutorName);
                                                        setComplaintSubjectName(singleItem.subjectName);
+                                                       setComplaintReason('');
+                                                       setComplaintErrorMsg(null);
+                                                       setComplaintSuccessMsg(null);
                                                      }}
                                                      style={{
                                                        padding: '6px 12px',
@@ -1978,7 +1981,12 @@ export default function App() {
             zIndex: 1600,
             padding: '16px',
           }}
-          onClick={() => setComplaintBookingId(null)}
+          onClick={() => {
+            setComplaintBookingId(null);
+            setComplaintReason('');
+            setComplaintErrorMsg(null);
+            setComplaintSuccessMsg(null);
+          }}
         >
           <div
             className="glass-panel"
@@ -2105,7 +2113,12 @@ export default function App() {
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                   <button
                     type="button"
-                    onClick={() => setComplaintBookingId(null)}
+                    onClick={() => {
+                      setComplaintBookingId(null);
+                      setComplaintReason('');
+                      setComplaintErrorMsg(null);
+                      setComplaintSuccessMsg(null);
+                    }}
                     style={{
                       padding: '8px 16px',
                       borderRadius: '8px',
