@@ -171,11 +171,16 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
   // Helper to auto-translate legacy/English transaction descriptions to pure Vietnamese
   const translateTxDescription = (desc: string) => {
     if (!desc) return '';
-    if (desc === 'Refund for cancelled booking' || desc.startsWith('Refund for cancelled booking')) {
+    const trimmed = desc.trim();
+
+    if (trimmed === 'Payment for completed session' || trimmed.startsWith('Payment for completed session')) {
+      return 'Thanh toán học phí buổi học đã hoàn thành';
+    }
+    if (trimmed === 'Refund for cancelled booking' || trimmed.startsWith('Refund for cancelled booking')) {
       return 'Hoàn lại tín chỉ do lịch học bị hủy';
     }
-    if (desc.startsWith('Booking holding for')) {
-      const rawDateStr = desc.replace('Booking holding for', '').trim();
+    if (trimmed.startsWith('Booking holding for')) {
+      const rawDateStr = trimmed.replace('Booking holding for', '').trim();
       const parsedDate = new Date(rawDateStr);
       if (!isNaN(parsedDate.getTime())) {
         const formattedTime = parsedDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -184,6 +189,17 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
       }
       return `Tạm giữ tín chỉ cho buổi học (${rawDateStr})`;
     }
+    if (trimmed.startsWith('Admin approved deposit of')) {
+      const amountStr = trimmed.replace('Admin approved deposit of', '').replace('credits.', '').trim();
+      return `Admin đã phê duyệt nạp ${amountStr} tín chỉ`;
+    }
+    if (trimmed.includes('Payment for booking') || trimmed.includes('Payment for session')) {
+      return 'Thanh toán học phí buổi học';
+    }
+    if (trimmed.includes('Deposit via VNPAY') || trimmed.includes('VNPAY deposit')) {
+      return 'Nạp tiền vào ví qua cổng VNPAY';
+    }
+
     return desc;
   };
 
