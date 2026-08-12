@@ -22,15 +22,8 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({
       setLoading(true);
       const res = await notificationService.getNotifications(1, 100);
       const items = res.items || [];
-      if (isAdmin) {
-        // Admin gets ALL notifications in system!
-        setNotifications(items);
-      } else {
-        const systemNotifications = items.filter(
-          (n) => n.type === 'System' || n.type === 'TutorApproved' || n.type === 'TutorRejected' || n.type === 'OverdueClassWarning'
-        );
-        setNotifications(systemNotifications);
-      }
+      // Show ALL notifications in bell for all roles (Admin, Student, Tutor)
+      setNotifications(items);
     } catch (err) {
       console.error('Failed to fetch center notifications:', err);
     } finally {
@@ -85,18 +78,24 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({
       return { tab: 'bookings', label: 'Quản Lý Lịch Học (/bookings)', path: '/bookings' };
     }
     if (n.type === 'TutorApprovalRequest' || n.type === 'TutorApproved' || n.type === 'TutorRejected') {
-      return { tab: 'admin-tutors', label: 'Duyệt Hồ Sơ Gia Sư (/admin-tutors)', path: '/admin-tutors' };
+      return isAdmin
+        ? { tab: 'admin-tutors', label: 'Duyệt Hồ Sơ Gia Sư (/admin-tutors)', path: '/admin-tutors' }
+        : { tab: 'home', label: 'Trang Chủ (/home)', path: '/home' };
     }
-    if (n.type === 'CreditChanged' || n.relatedEntityType === 'DepositRequest' || title.includes('nạp tiền')) {
-      return { tab: 'wallet', label: 'Quản Lý Nạp Tiền (/wallet)', path: '/wallet' };
+    if (n.type === 'CreditChanged' || n.relatedEntityType === 'DepositRequest' || title.includes('nạp tiền') || title.includes('tín dụng')) {
+      return { tab: 'wallet', label: 'Ví Tín Dụng (/wallet)', path: '/wallet' };
     }
     if (n.type === 'ReviewReceived') {
-      return { tab: 'admin-reviews', label: 'Quản Lý Đánh Giá (/admin-reviews)', path: '/admin-reviews' };
+      return isAdmin
+        ? { tab: 'admin-reviews', label: 'Quản Lý Đánh Giá (/admin-reviews)', path: '/admin-reviews' }
+        : { tab: 'home', label: 'Trang Chủ & Đánh Giá (/home)', path: '/home' };
     }
     if (n.type.startsWith('Booking') || n.type === 'OverdueClassWarning') {
       return { tab: 'bookings', label: 'Quản Lý Lịch Học (/bookings)', path: '/bookings' };
     }
-    return { tab: 'admin-notifications', label: 'Trung Tâm Thông Báo (/admin-notifications)', path: '/admin-notifications' };
+    return isAdmin
+      ? { tab: 'admin-notifications', label: 'Trung Tâm Thông Báo (/admin-notifications)', path: '/admin-notifications' }
+      : { tab: 'center-notifications', label: 'Trung Tâm Thông Báo (/center-notifications)', path: '/center-notifications' };
   };
 
   const handleNotificationClick = (n: NotificationDto) => {
