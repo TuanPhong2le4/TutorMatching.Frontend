@@ -2004,8 +2004,17 @@ export default function App() {
                 </label>
                 <textarea
                   value={complaintReason}
-                  onChange={(e) => setComplaintReason(e.target.value)}
-                  maxLength={500}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.length > 3000) {
+                      setComplaintErrorMsg('Nội dung khiếu nại không được vượt quá 3000 ký tự cho phép!');
+                      setComplaintReason(val.slice(0, 3000));
+                    } else {
+                      setComplaintErrorMsg(null);
+                      setComplaintReason(val);
+                    }
+                  }}
+                  maxLength={3000}
                   required
                   rows={4}
                   placeholder="Mô tả chi tiết lý do khiếu nại (ví dụ: gia sư thái độ không tôn trọng, đi muộn, tự ý kết thúc buổi học sớm, giảng bài không đúng chất lượng...)"
@@ -2019,9 +2028,13 @@ export default function App() {
                     outline: 'none',
                     fontSize: '14px',
                     resize: 'none',
-                    marginBottom: '12px',
+                    marginBottom: '4px',
                   }}
                 />
+
+                <div style={{ fontSize: '11px', color: complaintReason.length >= 3000 ? '#ef4444' : '#64748b', textAlign: 'right', marginBottom: '12px' }}>
+                  {complaintReason.length}/3000 ký tự
+                </div>
 
                 {/* Quick suggestion chips */}
                 <div style={{ marginBottom: '16px' }}>
@@ -2036,7 +2049,10 @@ export default function App() {
                       <button
                         key={chip}
                         type="button"
-                        onClick={() => setComplaintReason(chip)}
+                        onClick={() => {
+                          setComplaintErrorMsg(null);
+                          setComplaintReason(chip);
+                        }}
                         style={{
                           padding: '4px 8px',
                           backgroundColor: 'rgba(255,255,255,0.05)',
@@ -2093,7 +2109,7 @@ export default function App() {
                       fontSize: '13px',
                     }}
                   >
-                    {isSubmittingComplaint ? 'Đang gửi...' : '🚀 Gửi Khiếu Nại lên Admin'}
+                    {isSubmittingComplaint ? 'Đang gửi...' : '🚀 Gửi Khiếu Nại đến Trung Tâm'}
                   </button>
                 </div>
               </form>
