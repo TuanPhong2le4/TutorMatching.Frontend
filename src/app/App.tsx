@@ -2033,7 +2033,7 @@ export default function App() {
                 />
 
                 <div style={{ fontSize: '11px', color: complaintReason.length >= 3000 ? '#ef4444' : '#64748b', textAlign: 'right', marginBottom: '12px' }}>
-                  {complaintReason.length}/3000 ký tự
+                  {complaintReason.length}/3000
                 </div>
 
                 {/* Quick suggestion chips */}
