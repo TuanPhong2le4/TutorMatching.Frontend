@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { adminUserService, PendingTutorDto } from '../services/adminUserService';
 import { availabilityService, AvailabilityDto } from '../../tutors/services/availabilityService';
 
+const REJECT_REASON_MAX = 1000;
+
 export const AdminTutorApproval: React.FC = () => {
   const [tutors, setTutors] = useState<PendingTutorDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -9,6 +11,12 @@ export const AdminTutorApproval: React.FC = () => {
   const [availabilities, setAvailabilities] = useState<AvailabilityDto[]>([]);
   const [availLoading, setAvailLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+
+  // Rejection reason modal state
+  const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false);
+  const [rejectTutorId, setRejectTutorId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState<string>('');
+  const [rejectErrorMsg, setRejectErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     loadPendingTutors();
@@ -54,18 +62,62 @@ export const AdminTutorApproval: React.FC = () => {
     }
   };
 
-  const handleReject = async (tutorId: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn TỪ CHỐI hồ sơ gia sư này? Gia sư sẽ không thể nhận bất kỳ lớp học nào.')) return;
+  const openRejectModal = (tutorId: string) => {
+    setRejectTutorId(tutorId);
+    setRejectReason('');
+    setRejectErrorMsg(null);
+    setRejectModalOpen(true);
+  };
+
+  const closeRejectModal = () => {
+    setRejectModalOpen(false);
+    setRejectTutorId(null);
+    setRejectReason('');
+    setRejectErrorMsg(null);
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectTutorId) return;
+    if (!rejectReason.trim()) {
+      setRejectErrorMsg('Vui lòng nhập lý do từ chối hồ sơ.');
+      return;
+    }
     try {
       setSubmitting(true);
-      await adminUserService.rejectTutor(tutorId);
+      setRejectErrorMsg(null);
+      await adminUserService.rejectTutor(rejectTutorId, rejectReason.trim());
       alert('Đã từ chối hồ sơ gia sư này.');
+      closeRejectModal();
       setSelectedTutor(null);
       loadPendingTutors();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi từ chối hồ sơ.');
+      setRejectErrorMsg(err.response?.data?.message || 'Có lỗi xảy ra khi từ chối hồ sơ.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRejectReasonKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (rejectReason.length >= REJECT_REASON_MAX) {
+      const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+      if (!allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+      }
+    }
+  };
+
+  const handleRejectReasonPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    if (rejectReason.length + pastedText.length > REJECT_REASON_MAX) {
+      e.preventDefault();
+      const remaining = REJECT_REASON_MAX - rejectReason.length;
+      if (remaining > 0) {
+        const textarea = e.currentTarget;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const newVal = rejectReason.substring(0, start) + pastedText.substring(0, remaining) + rejectReason.substring(end);
+        setRejectReason(newVal.substring(0, REJECT_REASON_MAX));
+      }
     }
   };
 
@@ -307,7 +359,7 @@ export const AdminTutorApproval: React.FC = () => {
             <div style={{ display: 'flex', gap: '14px', marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
               <button
                 disabled={submitting}
-                onClick={() => handleReject(selectedTutor.userId)}
+                onClick={() => openRejectModal(selectedTutor.userId)}
                 style={{
                   flex: 1,
                   padding: '14px',
@@ -339,6 +391,173 @@ export const AdminTutorApproval: React.FC = () => {
                 }}
               >
                 ✅ Duyệt hồ sơ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Reason Modal */}
+      {rejectModalOpen && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) closeRejectModal(); }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '20px'
+          }}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              borderRadius: '24px',
+              padding: '32px',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+              boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.15)'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#f87171' }}>❌ Từ Chối Hồ Sơ Gia Sư</h3>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Vui lòng nhập lý do từ chối</span>
+              </div>
+              <button
+                onClick={closeRejectModal}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: 'none',
+                  color: '#fff',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  display: 'grid',
+                  placeItems: 'center'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Reason Textarea */}
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', color: '#cbd5e1', marginBottom: '8px', fontWeight: 600 }}>
+                Lý do từ chối <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val.length <= REJECT_REASON_MAX) {
+                    setRejectReason(val);
+                    setRejectErrorMsg(null);
+                  }
+                }}
+                onKeyDown={handleRejectReasonKeyDown}
+                onPaste={handleRejectReasonPaste}
+                placeholder="Nhập lý do từ chối hồ sơ gia sư..."
+                rows={5}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  border: rejectReason.length >= REJECT_REASON_MAX
+                    ? '1px solid #ef4444'
+                    : '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  transition: 'border-color 0.2s ease',
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                {rejectReason.length >= REJECT_REASON_MAX ? (
+                  <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>
+                    ⚠️ Đã đạt giới hạn ký tự cho phép
+                  </span>
+                ) : (
+                  <span />
+                )}
+                <span style={{
+                  fontSize: '12px',
+                  color: rejectReason.length >= REJECT_REASON_MAX ? '#ef4444' : '#64748b',
+                  fontWeight: 500,
+                }}>
+                  {rejectReason.length}/{REJECT_REASON_MAX}
+                </span>
+              </div>
+            </div>
+
+            {/* Error message */}
+            {rejectErrorMsg && (
+              <div style={{
+                padding: '10px 14px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#f87171',
+                fontSize: '13px',
+                fontWeight: 500,
+              }}>
+                ⚠️ {rejectErrorMsg}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={closeRejectModal}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#94a3b8',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleRejectSubmit}
+                disabled={submitting || !rejectReason.trim()}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  backgroundColor: submitting || !rejectReason.trim() ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid #ef4444',
+                  color: submitting || !rejectReason.trim() ? '#94a3b8' : '#f87171',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  cursor: submitting || !rejectReason.trim() ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {submitting ? '⏳ Đang xử lý...' : '❌ Xác nhận từ chối'}
               </button>
             </div>
           </div>

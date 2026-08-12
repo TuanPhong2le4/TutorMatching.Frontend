@@ -143,7 +143,7 @@ export const adminUserService = {
     await api.put(`/Admin/tutors/${tutorId}/approve`);
   },
 
-  async rejectTutor(tutorId: string): Promise<void> {
-    await api.put(`/Admin/tutors/${tutorId}/reject`);
+  async rejectTutor(tutorId: string, reason: string): Promise<void> {
+    await api.put(`/Admin/tutors/${tutorId}/reject`, { reason });
   }
 };
