@@ -63,6 +63,22 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   // Get icons and colors based on notification type
   const getTypeDetails = (type: string, title?: string, relatedEntityType?: string | null) => {
+    // Specific entity or title matching for Admin routes
+    if (
+      type === 'TutorApprovalRequest' ||
+      type === '8' ||
+      relatedEntityType === 'TutorApprovalRequest' ||
+      (title && (title.includes('hồ sơ gia sư') || title.includes('cần duyệt')))
+    ) {
+      return { icon: '📝', color: '#fbbf24', tab: 'admin-tutors' };
+    }
+    if (relatedEntityType === 'DepositRequest' || (title && (title.includes('nạp tiền') || title.includes('Nạp tiền')))) {
+      return { icon: '💳', color: '#fbbf24', tab: 'wallet' };
+    }
+    if (title && (title.includes('Khiếu nại') || title.includes('khiếu nại'))) {
+      return { icon: '🚩', color: '#fbbf24', tab: 'admin-notifications' };
+    }
+
     switch (type) {
       case 'BookingCreated':
         return { icon: '📅', color: '#38bdf8', tab: 'bookings' };
@@ -82,24 +98,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return { icon: '✅', color: '#10b981', tab: 'center-notifications' };
       case 'TutorRejected':
         return { icon: '❌', color: '#f87171', tab: 'center-notifications' };
-      case 'TutorApprovalRequest':
-        return { icon: '📝', color: '#fbbf24', tab: 'admin-tutors' };
       case 'OverdueClassWarning':
         return { icon: '⚠️', color: '#ef4444', tab: 'bookings' };
       case 'System':
-        if (title && (title.includes('Khiếu nại') || title.includes('khiếu nại'))) {
-          return { icon: '🚩', color: '#fbbf24', tab: 'admin-notifications' };
-        }
-        // Deposit request notifications for admin
-        if (relatedEntityType === 'DepositRequest' || (title && title.includes('nạp tiền'))) {
-          return { icon: '💳', color: '#fbbf24', tab: 'wallet' };
-        }
-        if (title && (title.includes('WARNING') || title.includes('Cảnh cáo'))) {
-          return { icon: '⚠️', color: '#ef4444', tab: 'admin-notifications' };
-        }
-        return { icon: '🔔', color: '#a78bfa', tab: 'admin-notifications' };
       default:
-        return { icon: '🔔', color: '#a78bfa', tab: null as string | null };
+        return { icon: '🔔', color: '#a78bfa', tab: 'admin-notifications' };
     }
   };
 
