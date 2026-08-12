@@ -1666,50 +1666,91 @@ export default function App() {
                                               </>
                                             )}
 
-                                            {/* Student: Completed Actions (Only Student can write review!) */}
-                                            {isStudentRole && singleItem.status === 2 && (
-                                              !isStarted ? (
-                                                <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>⏰ Chưa đến giờ học</span>
-                                              ) : singleItem.isStudentReviewed ? (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                  <span style={{ fontSize: '13px', color: '#34d399', fontWeight: 600 }}>✓ Đã đánh giá</span>
-                                                  <button
-                                                    onClick={() => setViewReviewDetails(singleItem)}
-                                                    style={{
-                                                      padding: '4px 8px',
-                                                      backgroundColor: 'rgba(255,255,255,0.05)',
-                                                      border: '1px solid rgba(255,255,255,0.1)',
-                                                      color: '#94a3b8',
-                                                      borderRadius: '6px',
-                                                      fontSize: '11px',
-                                                      cursor: 'pointer',
-                                                    }}
-                                                  >
-                                                    💬 Xem
-                                                  </button>
-                                                </div>
-                                              ) : (
-                                                <button
-                                                  onClick={() => {
-                                                    setReviewBookingId(singleItem.id);
-                                                    setReviewTutorName(singleItem.tutorName);
-                                                    setReviewSubjectName(singleItem.subjectName);
-                                                  }}
-                                                  style={{
-                                                    padding: '6px 12px',
-                                                    backgroundColor: 'rgba(52, 211, 153, 0.15)',
-                                                    border: '1px solid rgba(52, 211, 153, 0.3)',
-                                                    color: '#34d399',
-                                                    borderRadius: '6px',
-                                                    fontSize: '12px',
-                                                    cursor: 'pointer',
-                                                    fontWeight: 600,
-                                                  }}
-                                                >
-                                                  ✍️ Viết Đánh Giá
-                                                </button>
-                                              )
-                                            )}
+                                             {/* Student: Completed Actions (Review & Complaint) */}
+                                             {isStudentRole && singleItem.status === 2 && (
+                                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                 {singleItem.isStudentReviewed ? (
+                                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                     <span style={{ fontSize: '13px', color: '#34d399', fontWeight: 600 }}>✓ Đã đánh giá</span>
+                                                     <button
+                                                       onClick={() => setViewReviewDetails(singleItem)}
+                                                       style={{
+                                                         padding: '4px 8px',
+                                                         backgroundColor: 'rgba(255,255,255,0.05)',
+                                                         border: '1px solid rgba(255,255,255,0.1)',
+                                                         color: '#94a3b8',
+                                                         borderRadius: '6px',
+                                                         fontSize: '11px',
+                                                         cursor: 'pointer',
+                                                       }}
+                                                     >
+                                                       💬 Xem
+                                                     </button>
+                                                   </div>
+                                                 ) : (
+                                                   <button
+                                                     onClick={() => {
+                                                       setReviewBookingId(singleItem.id);
+                                                       setReviewTutorName(singleItem.tutorName);
+                                                       setReviewSubjectName(singleItem.subjectName);
+                                                     }}
+                                                     style={{
+                                                       padding: '6px 12px',
+                                                       backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                                                       border: '1px solid rgba(52, 211, 153, 0.3)',
+                                                       color: '#34d399',
+                                                       borderRadius: '6px',
+                                                       fontSize: '12px',
+                                                       cursor: 'pointer',
+                                                       fontWeight: 600,
+                                                     }}
+                                                   >
+                                                     ✍️ Viết Đánh Giá
+                                                   </button>
+                                                 )}
+
+                                                 {/* Student Complaint Button / Badge */}
+                                                 {singleItem.cancellationReason?.startsWith('[KHIẾU NẠI]') ? (
+                                                   <span
+                                                     style={{
+                                                       fontSize: '12px',
+                                                       color: '#fbbf24',
+                                                       fontStyle: 'italic',
+                                                       padding: '4px 8px',
+                                                       backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                                       borderRadius: '6px',
+                                                       border: '1px solid rgba(245, 158, 11, 0.3)',
+                                                       display: 'inline-flex',
+                                                       alignItems: 'center',
+                                                       gap: '4px'
+                                                     }}
+                                                     title={`Lý do: ${singleItem.cancellationReason.replace('[KHIẾU NẠI]: ', '')}`}
+                                                   >
+                                                     🚩 Đã khiếu nại (Đang chờ Admin)
+                                                   </span>
+                                                 ) : (
+                                                   <button
+                                                     onClick={() => {
+                                                       setComplaintBookingId(singleItem.id);
+                                                       setComplaintTutorName(singleItem.tutorName);
+                                                       setComplaintSubjectName(singleItem.subjectName);
+                                                     }}
+                                                     style={{
+                                                       padding: '6px 12px',
+                                                       backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                                       border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                       color: '#fbbf24',
+                                                       borderRadius: '6px',
+                                                       fontSize: '12px',
+                                                       cursor: 'pointer',
+                                                       fontWeight: 600,
+                                                     }}
+                                                   >
+                                                     🚩 Khiếu Nại Gia Sư
+                                                   </button>
+                                                 )}
+                                               </div>
+                                             )}
 
                                             {/* Tutor: Completed Actions */}
                                             {isTutorRole && singleItem.status === 2 && (
