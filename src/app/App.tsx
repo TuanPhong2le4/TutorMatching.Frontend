@@ -2014,9 +2014,9 @@ export default function App() {
                   value={complaintReason}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val.length >= 3000) {
-                      setComplaintReason(val.slice(0, 3000));
-                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 3000 ký tự! Không thể nhập thêm.');
+                    if (val.length >= 1000) {
+                      setComplaintReason(val.slice(0, 1000));
+                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 1000 ký tự! Không thể nhập thêm.');
                     } else {
                       setComplaintErrorMsg(null);
                       setComplaintReason(val);
@@ -2031,9 +2031,9 @@ export default function App() {
                     const textarea = e.currentTarget;
                     const hasSelection = textarea.selectionStart !== textarea.selectionEnd;
 
-                    if (complaintReason.length >= 3000 && !isControlKey && !hasSelection) {
+                    if (complaintReason.length >= 1000 && !isControlKey && !hasSelection) {
                       e.preventDefault();
-                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 3000 ký tự! Không thể nhập thêm.');
+                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 1000 ký tự! Không thể nhập thêm.');
                     }
                   }}
                   onPaste={(e) => {
@@ -2041,11 +2041,11 @@ export default function App() {
                     const textarea = e.currentTarget;
                     const selectionLen = textarea.selectionEnd - textarea.selectionStart;
                     const currentLen = complaintReason.length - selectionLen;
-                    if (currentLen + pasteText.length > 3000) {
-                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 3000 ký tự! Nội dung dán đã được tự động cắt.');
+                    if (currentLen + pasteText.length > 1000) {
+                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 1000 ký tự! Nội dung dán đã được tự động cắt.');
                     }
                   }}
-                  maxLength={3000}
+                  maxLength={1000}
                   required
                   rows={4}
                   placeholder="Mô tả chi tiết lý do khiếu nại (ví dụ: gia sư thái độ không tôn trọng, đi muộn, tự ý kết thúc buổi học sớm, giảng bài không đúng chất lượng...)"
@@ -2063,8 +2063,8 @@ export default function App() {
                   }}
                 />
 
-                <div style={{ fontSize: '11px', color: complaintReason.length >= 3000 ? '#ef4444' : '#64748b', textAlign: 'right', marginBottom: '12px' }}>
-                  {complaintReason.length}/3000
+                <div style={{ fontSize: '11px', color: complaintReason.length >= 1000 ? '#ef4444' : '#64748b', textAlign: 'right', marginBottom: '12px' }}>
+                  {complaintReason.length}/1000
                 </div>
 
                 {/* Quick suggestion chips */}
