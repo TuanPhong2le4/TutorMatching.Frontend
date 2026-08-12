@@ -85,14 +85,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       case 'OverdueClassWarning':
         return { icon: '⚠️', color: '#ef4444', tab: 'bookings' };
       case 'System':
+        if (title && (title.includes('Khiếu nại') || title.includes('khiếu nại'))) {
+          return { icon: '🚩', color: '#fbbf24', tab: 'admin-notifications' };
+        }
         // Deposit request notifications for admin
         if (relatedEntityType === 'DepositRequest' || (title && title.includes('nạp tiền'))) {
           return { icon: '💳', color: '#fbbf24', tab: 'wallet' };
         }
         if (title && (title.includes('WARNING') || title.includes('Cảnh cáo'))) {
-          return { icon: '⚠️', color: '#ef4444', tab: 'center-notifications' };
+          return { icon: '⚠️', color: '#ef4444', tab: 'admin-notifications' };
         }
-        return { icon: '🔔', color: '#a78bfa', tab: 'center-notifications' };
+        return { icon: '🔔', color: '#a78bfa', tab: 'admin-notifications' };
       default:
         return { icon: '🔔', color: '#a78bfa', tab: null as string | null };
     }
@@ -304,6 +307,29 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 );
               })
             )}
+          </div>
+
+          {/* Footer link to Notification Center */}
+          <div
+            onClick={() => {
+              setIsOpen(false);
+              if (onNavigate) onNavigate('admin-notifications');
+            }}
+            style={{
+              padding: '12px',
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              textAlign: 'center',
+              backgroundColor: 'rgba(255,255,255,0.02)',
+              color: '#38bdf8',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.08)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)')}
+          >
+            🔔 Xem tất cả tại Trung Tâm Thông Báo →
           </div>
         </div>
       )}

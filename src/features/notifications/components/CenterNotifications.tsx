@@ -148,6 +148,7 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {notifications.map((n) => {
+            const isComplaint = n.title.includes('Khiếu nại') || n.title.includes('khiếu nại');
             const isWarning = n.title.includes('WARNING') || n.title.includes('Cảnh cáo') || n.type === 'OverdueClassWarning';
             const isApproved = n.type === 'TutorApproved';
             const isRejected = n.type === 'TutorRejected';
@@ -158,7 +159,13 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({ onNoti
             let borderColor = 'rgba(255,255,255,0.06)';
             let itemBg = 'rgba(15, 23, 42, 0.4)';
 
-            if (isApproved) {
+            if (isComplaint) {
+              icon = '🚩';
+              iconColor = '#fbbf24';
+              iconBg = 'rgba(251, 191, 36, 0.15)';
+              borderColor = 'rgba(251, 191, 36, 0.3)';
+              itemBg = 'rgba(251, 191, 36, 0.05)';
+            } else if (isApproved) {
               icon = '✅';
               iconColor = '#10b981';
               iconBg = 'rgba(16, 185, 129, 0.15)';

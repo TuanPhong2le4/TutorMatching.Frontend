@@ -21,7 +21,7 @@ export default function App() {
     if (paymentParam || tabParam === 'wallet') {
       return 'wallet';
     }
-    const validTabs: TabType[] = ['home', 'tutors', 'bookings', 'wallet', 'progress', 'admin-reviews', 'admin-users', 'admin-tutors', 'admin-revenue', 'admin-subjects', 'center-notifications'];
+    const validTabs: TabType[] = ['home', 'tutors', 'bookings', 'wallet', 'progress', 'admin-reviews', 'admin-users', 'admin-tutors', 'admin-revenue', 'admin-subjects', 'admin-notifications', 'center-notifications'];
     if (tabParam && (validTabs as string[]).includes(tabParam)) {
       return tabParam as TabType;
     }
@@ -70,7 +70,7 @@ export default function App() {
   const roleNum = Number(user?.role);
   const isAdmin = roleNum === 0 || user?.role === 'Admin';
   if (isAuthenticated) {
-    if (isAdmin && (activeTab === 'progress' || activeTab === 'center-notifications')) {
+    if (isAdmin && activeTab === 'progress') {
       setActiveTab('home');
     }
     if (!isAdmin && (activeTab === 'admin-reviews' || activeTab === 'admin-users' || activeTab === 'admin-tutors' || activeTab === 'admin-revenue' || activeTab === 'admin-subjects')) {
@@ -115,7 +115,7 @@ export default function App() {
   const [adminUserSubTab, setAdminUserSubTab] = useState<'students' | 'tutors'>('students');
 
   const handleTabChange = (
-    tab: 'home' | 'tutors' | 'bookings' | 'wallet' | 'progress' | 'admin-reviews' | 'admin-users' | 'admin-tutors' | 'admin-revenue' | 'admin-subjects' | 'center-notifications',
+    tab: TabType,
     subTab?: 'students' | 'tutors'
   ) => {
     const roleNum = Number(user?.role);
@@ -128,7 +128,7 @@ export default function App() {
     if (tab === 'admin-revenue' && !isAdmin) return;
     if (tab === 'admin-subjects' && !isAdmin) return;
     if (tab === 'progress' && isAdmin) return;
-    if (tab === 'center-notifications' && isAdmin) return;
+    // Allow notification center for admin
 
     if (subTab) {
       setAdminUserSubTab(subTab);
@@ -196,13 +196,8 @@ export default function App() {
           } else {
             setActiveTab('progress');
           }
-        } else if (path === '/center-notifications') {
-          if (isAdmin) {
-            setActiveTab('home');
-            window.history.replaceState(null, '', '/home');
-          } else {
-            setActiveTab('center-notifications');
-          }
+        } else if (path === '/center-notifications' || path === '/admin-notifications') {
+          setActiveTab('admin-notifications');
         } else if (path === '/admin-reviews') {
           // Admin reviews is only for Admin
           if (!isAdmin) {
@@ -298,8 +293,9 @@ export default function App() {
         return Number(user?.role) === 0 || user?.role === 'Admin' ? '💎 Quản Lý Nạp Tiền & Tín Chỉ' : '💎 Ví Tín Dụng & Nạp Tiền';
       case 'progress':
         return '🎯 Tiến Độ Học Tập & Mục Tiêu';
+      case 'admin-notifications':
       case 'center-notifications':
-        return '📢 Thông Báo Từ Trung Tâm';
+        return Number(user?.role) === 0 || user?.role === 'Admin' ? '📢 Trung Tâm Thông Báo System & Khiếu Nại' : '📢 Thông Báo Từ Trung Tâm';
       case 'admin-reviews':
         return '⭐ Quản Lý Đánh Giá & Phản Hồi';
       case 'admin-users':
