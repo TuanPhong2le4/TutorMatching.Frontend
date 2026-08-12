@@ -2006,12 +2006,35 @@ export default function App() {
                   value={complaintReason}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val.length > 3000) {
-                      setComplaintErrorMsg('Nội dung khiếu nại không được vượt quá 3000 ký tự cho phép!');
+                    if (val.length >= 3000) {
                       setComplaintReason(val.slice(0, 3000));
+                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 3000 ký tự! Không thể nhập thêm.');
                     } else {
                       setComplaintErrorMsg(null);
                       setComplaintReason(val);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    const isControlKey = [
+                      'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                      'Home', 'End', 'Tab', 'Enter', 'Escape'
+                    ].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey;
+
+                    const textarea = e.currentTarget;
+                    const hasSelection = textarea.selectionStart !== textarea.selectionEnd;
+
+                    if (complaintReason.length >= 3000 && !isControlKey && !hasSelection) {
+                      e.preventDefault();
+                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 3000 ký tự! Không thể nhập thêm.');
+                    }
+                  }}
+                  onPaste={(e) => {
+                    const pasteText = e.clipboardData.getData('text') || '';
+                    const textarea = e.currentTarget;
+                    const selectionLen = textarea.selectionEnd - textarea.selectionStart;
+                    const currentLen = complaintReason.length - selectionLen;
+                    if (currentLen + pasteText.length > 3000) {
+                      setComplaintErrorMsg('Đã đạt giới hạn tối đa 3000 ký tự! Nội dung dán đã được tự động cắt.');
                     }
                   }}
                   maxLength={3000}
