@@ -151,6 +151,42 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
     };
   };
 
+  // Helper to format ISO date to Vietnam Timezone (Asia/Ho_Chi_Minh GMT+7) in real time
+  const formatVietnamDateTime = (dateString: string) => {
+    if (!dateString) return '';
+    const utcString = dateString.includes('Z') || dateString.includes('+') ? dateString : `${dateString}Z`;
+    const date = new Date(utcString);
+    return date.toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour12: false,
+    });
+  };
+
+  // Helper to auto-translate legacy/English transaction descriptions to pure Vietnamese
+  const translateTxDescription = (desc: string) => {
+    if (!desc) return '';
+    if (desc === 'Refund for cancelled booking' || desc.startsWith('Refund for cancelled booking')) {
+      return 'Hoàn lại tín chỉ do lịch học bị hủy';
+    }
+    if (desc.startsWith('Booking holding for')) {
+      const rawDateStr = desc.replace('Booking holding for', '').trim();
+      const parsedDate = new Date(rawDateStr);
+      if (!isNaN(parsedDate.getTime())) {
+        const formattedTime = parsedDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const formattedDay = parsedDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return `Tạm giữ tín chỉ cho buổi học ngày ${formattedDay} lúc ${formattedTime}`;
+      }
+      return `Tạm giữ tín chỉ cho buổi học (${rawDateStr})`;
+    }
+    return desc;
+  };
+
   if (isAdmin) {
     return (
       <div>
@@ -369,7 +405,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                   </thead>
                   <tbody>
                     {adminRequests.map((r) => {
-                      const formattedDate = new Date(r.createdAt).toLocaleString('vi-VN');
+                      const formattedDate = formatVietnamDateTime(r.createdAt);
 
                       // Status style
                       let statusText = 'Đang xử lý (VNPAY)';
@@ -563,7 +599,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                 <tbody>
                   {transactions.map((tx) => {
                     const badge = getTransactionBadgeProps(tx.type);
-                    const formattedDate = new Date(tx.createdAt).toLocaleString('vi-VN');
+                    const formattedDate = formatVietnamDateTime(tx.createdAt);
 
                     return (
                       <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '14px' }}>
@@ -575,7 +611,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ balance, onBal
                         <td style={{ padding: '16px', fontWeight: 700, color: badge.prefix === '+' ? '#34d399' : '#f87171' }}>
                           {badge.prefix} {tx.amount.toFixed(1)} tc
                         </td>
-                        <td style={{ padding: '16px', color: '#cbd5e1' }}>{tx.description}</td>
+                        <td style={{ padding: '16px', color: '#cbd5e1' }}>{translateTxDescription(tx.description)}</td>
                         <td style={{ padding: '16px', fontWeight: 600, color: '#fff' }}>💎 {tx.balanceAfter.toFixed(1)} tc</td>
                         <td style={{ padding: '16px', color: '#94a3b8', fontSize: '12px' }}>{formattedDate}</td>
                       </tr>
