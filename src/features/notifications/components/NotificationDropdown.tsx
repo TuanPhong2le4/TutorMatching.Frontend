@@ -9,6 +9,7 @@ interface NotificationDropdownProps {
   onMarkRead: (id: string) => void;
   onMarkAllRead: () => void;
   onNavigate?: (tab: string) => void;
+  isAdmin?: boolean;
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
@@ -18,6 +19,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   onMarkRead,
   onMarkAllRead,
   onNavigate,
+  isAdmin = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -281,9 +283,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                       >
                         {n.title}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px', lineHeight: '1.4' }}>
-                        {n.message}
-                      </div>
+                      {!isAdmin && (
+                        <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px', lineHeight: '1.4' }}>
+                          {n.message}
+                        </div>
+                      )}
                       <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
                         {getElapsedTime(n.createdAt)}
                       </div>

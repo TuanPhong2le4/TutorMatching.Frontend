@@ -39,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const isTutorRole = Number(user?.role) === 1 || user?.role === 'Tutor';
+  const isAdmin = Number(user?.role) === 2 || user?.role === 'Admin';
 
   // Close User Menu on Click Outside
   useEffect(() => {
@@ -187,6 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
           onMarkRead={onMarkNotificationRead}
           onMarkAllRead={onMarkAllNotificationsRead}
           onNavigate={(tab) => onNavigateTab(tab as TabType)}
+          isAdmin={isAdmin}
         />
 
         {/* COMPACT USER PROFILE DROPDOWN (Matching Target UI in Hình 2) */}
