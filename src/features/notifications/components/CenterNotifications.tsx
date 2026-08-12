@@ -6,12 +6,14 @@ interface CenterNotificationsProps {
   onNotificationsUpdated?: () => void;
   onNavigate?: (tab: string) => void;
   isAdmin?: boolean;
+  activeTab?: string;
 }
 
 export const CenterNotifications: React.FC<CenterNotificationsProps> = ({
   onNotificationsUpdated,
   onNavigate,
   isAdmin = false,
+  activeTab,
 }) => {
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,10 +34,12 @@ export const CenterNotifications: React.FC<CenterNotificationsProps> = ({
   };
 
   useEffect(() => {
-    // Reset selected complaint when switching tabs or loading
-    setSelectedComplaint(null);
-    fetchCenterNotifications();
-  }, [isAdmin]);
+    // Reset selected complaint and re-fetch when switching tabs or when component mounts / activeTab changes to notification center
+    if (!activeTab || activeTab === 'center-notifications' || activeTab === 'admin-notifications') {
+      setSelectedComplaint(null);
+      fetchCenterNotifications();
+    }
+  }, [isAdmin, activeTab]);
 
   const handleMarkRead = async (id: string) => {
     try {

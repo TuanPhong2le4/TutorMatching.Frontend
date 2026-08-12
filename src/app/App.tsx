@@ -469,6 +469,15 @@ export default function App() {
     }
   }, [isAuthenticated]);
 
+  // Auto-poll notifications every 15 seconds for real-time bell updates
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const pollInterval = setInterval(() => {
+      fetchNotifications();
+    }, 15000);
+    return () => clearInterval(pollInterval);
+  }, [isAuthenticated]);
+
   // SignalR Hub Connection Setup
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -1942,6 +1951,7 @@ export default function App() {
               onNotificationsUpdated={fetchNotifications}
               onNavigate={(tab) => handleTabChange(tab as TabType)}
               isAdmin={isAdmin}
+              activeTab={activeTab}
             />
           </div>
         )}
