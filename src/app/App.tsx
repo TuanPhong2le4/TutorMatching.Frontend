@@ -382,6 +382,7 @@ export default function App() {
   const [complaintSubjectName, setComplaintSubjectName] = useState<string>('');
   const [complaintReason, setComplaintReason] = useState<string>('');
   const [isSubmittingComplaint, setIsSubmittingComplaint] = useState<boolean>(false);
+  const [complaintSubmittedIds, setComplaintSubmittedIds] = useState<Set<string>>(new Set());
   const [complaintSuccessMsg, setComplaintSuccessMsg] = useState<string | null>(null);
   const [complaintErrorMsg, setComplaintErrorMsg] = useState<string | null>(null);
 
@@ -391,8 +392,14 @@ export default function App() {
     try {
       setIsSubmittingComplaint(true);
       setComplaintErrorMsg(null);
-      await bookingService.submitComplaint(complaintBookingId, complaintReason.trim());
-      setComplaintSuccessMsg('Gửi khiếu nại thành công! Ban quản trị (Admin) sẽ xem xét và cảnh cáo gia sư.');
+      const targetId = complaintBookingId;
+      const cleanReason = complaintReason.trim();
+      await bookingService.submitComplaint(targetId, cleanReason);
+      setComplaintSubmittedIds((prev) => new Set(prev).add(targetId));
+      setBookings((prev) =>
+        prev.map((b) => (b.id === targetId ? { ...b, cancellationReason: `[KHIẾU NẠI]: ${cleanReason}` } : b))
+      );
+      setComplaintSuccessMsg('Gửi khiếu nại thành công! Ban quản trị sẽ xem xét và xử lý.');
       setTimeout(() => {
         setComplaintBookingId(null);
         setComplaintReason('');
@@ -1704,52 +1711,55 @@ export default function App() {
                                                      ✍️ Viết Đánh Giá
                                                    </button>
                                                  )}
-
-                                                 {/* Student Complaint Button / Badge */}
-                                                 {singleItem.cancellationReason?.startsWith('[KHIẾU NẠI]') ? (
-                                                   <span
-                                                     style={{
-                                                       fontSize: '12px',
-                                                       color: '#fbbf24',
-                                                       fontStyle: 'italic',
-                                                       padding: '4px 8px',
-                                                       backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                                       borderRadius: '6px',
-                                                       border: '1px solid rgba(245, 158, 11, 0.3)',
-                                                       display: 'inline-flex',
-                                                       alignItems: 'center',
-                                                       gap: '4px'
-                                                     }}
-                                                     title={`Lý do: ${singleItem.cancellationReason.replace('[KHIẾU NẠI]: ', '')}`}
-                                                   >
-                                                     🚩 Đã khiếu nại (Đang chờ Admin)
-                                                   </span>
-                                                 ) : (
-                                                   <button
-                                                     onClick={() => {
-                                                       setComplaintBookingId(singleItem.id);
-                                                       setComplaintTutorName(singleItem.tutorName);
-                                                       setComplaintSubjectName(singleItem.subjectName);
-                                                       setComplaintReason('');
-                                                       setComplaintErrorMsg(null);
-                                                       setComplaintSuccessMsg(null);
-                                                     }}
-                                                     style={{
-                                                       padding: '6px 12px',
-                                                       backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                                                       border: '1px solid rgba(245, 158, 11, 0.4)',
-                                                       color: '#fbbf24',
-                                                       borderRadius: '6px',
-                                                       fontSize: '12px',
-                                                       cursor: 'pointer',
-                                                       fontWeight: 600,
-                                                     }}
-                                                   >
-                                                     🚩 Khiếu Nại Gia Sư
-                                                   </button>
-                                                 )}
-                                               </div>
-                                             )}
+                                                  {/* Student Complaint Button / Green Badge */}
+                                                  {(singleItem.cancellationReason?.includes('[KHIẾU NẠI]') || complaintSubmittedIds.has(singleItem.id)) ? (
+                                                    <span
+                                                      style={{
+                                                        fontSize: '12px',
+                                                        color: '#34d399',
+                                                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                                        padding: '5px 10px',
+                                                        borderRadius: '6px',
+                                                        fontWeight: 600,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px'
+                                                      }}
+                                                      title={
+                                                        singleItem.cancellationReason
+                                                          ? `Lý do: ${singleItem.cancellationReason.replace('[KHIẾU NẠI]: ', '')}`
+                                                          : 'Đã gửi khiếu nại thành công'
+                                                      }
+                                                    >
+                                                      ✓ Đã khiếu nại
+                                                    </span>
+                                                  ) : (
+                                                    <button
+                                                      onClick={() => {
+                                                        setComplaintBookingId(singleItem.id);
+                                                        setComplaintTutorName(singleItem.tutorName);
+                                                        setComplaintSubjectName(singleItem.subjectName);
+                                                        setComplaintReason('');
+                                                        setComplaintErrorMsg(null);
+                                                        setComplaintSuccessMsg(null);
+                                                      }}
+                                                      style={{
+                                                        padding: '6px 12px',
+                                                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                        color: '#fbbf24',
+                                                        borderRadius: '6px',
+                                                        fontSize: '12px',
+                                                        cursor: 'pointer',
+                                                        fontWeight: 600,
+                                                      }}
+                                                    >
+                                                      🚩 Khiếu Nại Gia Sư
+                                                    </button>
+                                                  )}
+                                                 </div>
+                                               )}
 
                                             {/* Tutor: Completed Actions */}
                                             {isTutorRole && singleItem.status === 2 && (
