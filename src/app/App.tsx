@@ -447,13 +447,22 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  // Load initial notifications & count on mount / login
+  // Load initial notifications & count on mount / login (optimized to prevent unnecessary re-renders)
   const fetchNotifications = async () => {
     try {
       const res = await notificationService.getNotifications(1, 10);
-      setNotifications(res.items || []);
+      const newItems = res.items || [];
+      setNotifications((prev) => {
+        if (
+          prev.length === newItems.length &&
+          prev.every((item, i) => item.id === newItems[i]?.id && item.isRead === newItems[i]?.isRead)
+        ) {
+          return prev;
+        }
+        return newItems;
+      });
       const count = await notificationService.getUnreadCount();
-      setUnreadCount(count);
+      setUnreadCount((prev) => (prev === count ? prev : count));
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
     }
@@ -469,12 +478,12 @@ export default function App() {
     }
   }, [isAuthenticated]);
 
-  // Auto-poll notifications every 15 seconds for real-time bell updates
+  // Auto-poll notifications every 3 seconds for ultra-fast real-time bell updates
   useEffect(() => {
     if (!isAuthenticated) return;
     const pollInterval = setInterval(() => {
       fetchNotifications();
-    }, 15000);
+    }, 3000);
     return () => clearInterval(pollInterval);
   }, [isAuthenticated]);
 
