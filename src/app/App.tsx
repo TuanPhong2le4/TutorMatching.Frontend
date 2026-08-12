@@ -380,6 +380,36 @@ export default function App() {
   // Review detail popup state for viewing reviews
   const [viewReviewDetails, setViewReviewDetails] = useState<BookingDto | null>(null);
 
+  // Student Complaint Modal states
+  const [complaintBookingId, setComplaintBookingId] = useState<string | null>(null);
+  const [complaintTutorName, setComplaintTutorName] = useState<string>('');
+  const [complaintSubjectName, setComplaintSubjectName] = useState<string>('');
+  const [complaintReason, setComplaintReason] = useState<string>('');
+  const [isSubmittingComplaint, setIsSubmittingComplaint] = useState<boolean>(false);
+  const [complaintSuccessMsg, setComplaintSuccessMsg] = useState<string | null>(null);
+  const [complaintErrorMsg, setComplaintErrorMsg] = useState<string | null>(null);
+
+  const handleSubmitComplaint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!complaintBookingId || !complaintReason.trim()) return;
+    try {
+      setIsSubmittingComplaint(true);
+      setComplaintErrorMsg(null);
+      await bookingService.submitComplaint(complaintBookingId, complaintReason.trim());
+      setComplaintSuccessMsg('Gửi khiếu nại thành công! Ban quản trị (Admin) sẽ xem xét và cảnh cáo gia sư.');
+      setTimeout(() => {
+        setComplaintBookingId(null);
+        setComplaintReason('');
+        setComplaintSuccessMsg(null);
+        fetchBookings();
+      }, 1500);
+    } catch (err: any) {
+      setComplaintErrorMsg(err?.response?.data?.message || err?.response?.data?.messages?.[0] || 'Có lỗi xảy ra khi gửi khiếu nại.');
+    } finally {
+      setIsSubmittingComplaint(false);
+    }
+  };
+
   // Grouped Booking state for Tutor multiple student viewer modal
   const [viewGroupedBooking, setViewGroupedBooking] = useState<GroupedBooking | null>(null);
 
@@ -1889,6 +1919,147 @@ export default function App() {
         onClose={() => setIsBookingOpen(false)}
         onBookingSuccess={handleBookingSuccess}
       />
+
+      {/* Student Complaint Modal */}
+      {complaintBookingId && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15,23,42,0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1600,
+            padding: '16px',
+          }}
+          onClick={() => setComplaintBookingId(null)}
+        >
+          <div
+            className="glass-panel"
+            style={{ width: '100%', maxWidth: '480px', padding: '28px', borderRadius: '16px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '28px' }}>🚩</span>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: '#fbbf24' }}>Gửi Khiếu Nại Gia Sư</h3>
+                <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, marginTop: '2px' }}>Gia sư: <strong style={{ color: '#fff' }}>{complaintTutorName}</strong> | Môn: <strong style={{ color: '#fff' }}>{complaintSubjectName}</strong></p>
+              </div>
+            </div>
+
+            {complaintSuccessMsg ? (
+              <div style={{ padding: '16px', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', color: '#34d399', borderRadius: '8px', fontSize: '14px', textAlign: 'center', margin: '16px 0' }}>
+                ✓ {complaintSuccessMsg}
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitComplaint}>
+                <label style={{ display: 'block', fontSize: '13px', color: '#cbd5e1', marginBottom: '6px', fontWeight: 600 }}>
+                  Nội dung khiếu nại (Admin sẽ xem xét & cảnh cáo gia sư): <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <textarea
+                  value={complaintReason}
+                  onChange={(e) => setComplaintReason(e.target.value)}
+                  maxLength={500}
+                  required
+                  rows={4}
+                  placeholder="Mô tả chi tiết lý do khiếu nại (ví dụ: gia sư thái độ không tôn trọng, đi muộn, tự ý kết thúc buổi học sớm, giảng bài không đúng chất lượng...)"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    backgroundColor: '#0f172a',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#fff',
+                    outline: 'none',
+                    fontSize: '14px',
+                    resize: 'none',
+                    marginBottom: '12px',
+                  }}
+                />
+
+                {/* Quick suggestion chips */}
+                <div style={{ marginBottom: '16px' }}>
+                  <span style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>💡 Gợi ý lý do nhanh:</span>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {[
+                      'Gia sư đi muộn / nghỉ không báo trước',
+                      'Thái độ phục vụ không phù hợp',
+                      'Giảng dạy không đúng như cam kết',
+                      'Tự ý kết thúc buổi học sớm'
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => setComplaintReason(chip)}
+                        style={{
+                          padding: '4px 8px',
+                          backgroundColor: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          color: '#cbd5e1',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <span style={{ display: 'block', fontSize: '12px', color: '#64748b', marginBottom: '16px', lineHeight: '1.4' }}>
+                  🔒 Thông báo khiếu nại sẽ được chuyển trực tiếp tới Ban Quản Trị hệ thống (Admin). Admin sẽ gửi thông báo cảnh cáo tới gia sư và xem xét xử lý.
+                </span>
+
+                {complaintErrorMsg && (
+                  <div style={{ padding: '8px 12px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#f87171', borderRadius: '6px', fontSize: '13px', marginBottom: '12px' }}>
+                    ⚠️ {complaintErrorMsg}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setComplaintBookingId(null)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      backgroundColor: 'transparent',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                    }}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingComplaint}
+                    style={{
+                      padding: '8px 20px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: '#f59e0b',
+                      color: '#000',
+                      fontWeight: 700,
+                      cursor: isSubmittingComplaint ? 'not-allowed' : 'pointer',
+                      fontSize: '13px',
+                    }}
+                  >
+                    {isSubmittingComplaint ? 'Đang gửi...' : '🚀 Gửi Khiếu Nại lên Admin'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Cancel Booking Reason Prompt Modal */}
       {cancelBookingId && (

@@ -66,5 +66,10 @@ export const bookingService = {
   async cancelBooking(bookingId: string, reason: string): Promise<boolean> {
     await api.put(`/Bookings/${bookingId}/cancel`, { reason });
     return true;
+  },
+
+  async submitComplaint(bookingId: string, reason: string): Promise<boolean> {
+    await api.post(`/Bookings/${bookingId}/complaint`, { reason });
+    return true;
   }
 };
