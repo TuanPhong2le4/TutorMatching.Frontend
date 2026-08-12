@@ -86,7 +86,7 @@ export const AuthPage: React.FC = () => {
       if (mode === 'register') {
         const registeredList = getRegisteredEmails();
         if (registeredList.includes(trimmed.toLowerCase())) {
-          return 'Email này đã được đăng ký trên hệ thống. Vui lòng chọn Email khác hoặc Đăng Nhập.';
+          return 'Tài khoản này đã tồn tại';
         }
       }
     }
@@ -151,7 +151,7 @@ export const AuthPage: React.FC = () => {
           lower.includes('đã được đăng ký') ||
           lower.includes('đã tồn tại')
         ) {
-          errors.email = 'Email này đã được đăng ký trên hệ thống. Vui lòng chọn Email khác hoặc Đăng Nhập.';
+          errors.email = 'Tài khoản này đã tồn tại';
           saveRegisteredEmail(email);
           foundEmailDuplicate = true;
         }
@@ -370,7 +370,8 @@ export const AuthPage: React.FC = () => {
                   value={fullName}
                   onChange={(e) => handleFieldChange('fullName', e.target.value)}
                   onBlur={(e) => handleBlur('fullName', e.target.value)}
-                  placeholder="Nhập họ và tên đầy đủ"
+                  maxLength={50}
+                placeholder="Nhập họ và tên đầy đủ"
                   style={{
                     width: '100%',
                     padding: '14px 18px',
@@ -403,7 +404,8 @@ export const AuthPage: React.FC = () => {
                 value={email}
                 onChange={(e) => handleFieldChange('email', e.target.value)}
                 onBlur={(e) => handleBlur('email', e.target.value)}
-                placeholder="example@domain.com"
+                maxLength={100}
+              placeholder="example@domain.com"
                 style={{
                   width: '100%',
                   padding: '14px 18px',
@@ -436,7 +438,8 @@ export const AuthPage: React.FC = () => {
                   value={password}
                   onChange={(e) => handleFieldChange('password', e.target.value)}
                   onBlur={(e) => handleBlur('password', e.target.value)}
-                  placeholder="••••••••"
+                  maxLength={100}
+                placeholder="••••••••"
                   style={{
                     width: '100%',
                     padding: '14px 48px 14px 18px',
