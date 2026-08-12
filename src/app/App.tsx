@@ -303,7 +303,7 @@ export default function App() {
       case 'admin-reviews':
         return '⭐ Quản Lý Đánh Giá & Phản Hồi';
       case 'admin-users':
-        return '👥 Quản Lý Học Viên & Gia Sư';
+        return '👥 Quản Lý Người Dùng';
       case 'admin-tutors':
         return '📝 Duyệt Hồ Sơ Đăng Ký Gia Sư';
       case 'admin-revenue':
