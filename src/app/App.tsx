@@ -497,7 +497,7 @@ export default function App() {
     let isCancelled = false;
 
     // Connect directly to Azure backend hub for native WebSocket support
-    const hubUrl = (import.meta as any).env?.VITE_HUB_URL || 'https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net/hubs/notifications';
+    const hubUrl = (import.meta as any).env?.VITE_HUB_URL || 'https://tutormatchingplatform.onrender.com/hubs/notifications';
     const connection = new HubConnectionBuilder()
       .withUrl(hubUrl, {
         accessTokenFactory: () => token,

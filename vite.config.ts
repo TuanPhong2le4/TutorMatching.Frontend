@@ -8,12 +8,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net',
+        target: 'https://tutormatchingplatform.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       '/hubs': {
-        target: 'https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net',
+        target: 'https://tutormatchingplatform.onrender.com',
         ws: true,
         changeOrigin: true,
         secure: false,
