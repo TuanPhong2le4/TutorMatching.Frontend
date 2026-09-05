@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { uploadService } from '../../upload/services/uploadService';
 import { useAuth } from '../../auth/context/AuthContext';
 import { profileService, SubjectExperienceDto } from '../services/profileService';
 import { tutorService } from '../services/tutorService';
@@ -10,6 +11,28 @@ interface TutorProfileEditModalProps {
   onClose: () => void;
   onProfileSaved: () => void;
 }
+
+const MAX_CERT_IMAGES = 4;
+
+const parseCertificates = (raw?: string): { urls: string[]; note: string } => {
+  if (!raw) return { urls: [], note: '' };
+  const isImg = (url: string) => {
+    if (!url) return false;
+    const trimmed = url.trim();
+    return trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.includes('res.cloudinary.com') || /\.(jpg|jpeg|png|webp|gif)$/i.test(trimmed);
+  };
+  const parts = raw.split(/[\n,]+/).map((p) => p.trim()).filter(Boolean);
+  const urls: string[] = [];
+  const notes: string[] = [];
+  for (const p of parts) {
+    if (isImg(p)) {
+      if (urls.length < MAX_CERT_IMAGES) urls.push(p);
+    } else {
+      notes.push(p);
+    }
+  }
+  return { urls, note: notes.join(', ') };
+};
 
 export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ isOpen, onClose, onProfileSaved }) => {
   const { updateUser, logout } = useAuth();
@@ -24,6 +47,13 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
   const [bio, setBio] = useState('');
   const [qualifications, setQualifications] = useState('');
   const [defaultMeetingLink, setDefaultMeetingLink] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingQual, setUploadingQual] = useState(false);
+  const [certImages, setCertImages] = useState<string[]>([]);
+  const [uploadingCerts, setUploadingCerts] = useState<{ id: string; previewUrl: string }[]>([]);
+  const [certNote, setCertNote] = useState<string>('');
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const qualInputRef = useRef<HTMLInputElement>(null);
 
   // Field validation error states
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -64,7 +94,11 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
 
         if (profile.tutorProfile) {
           setBio(profile.tutorProfile.bio || '');
-          setQualifications(profile.tutorProfile.qualifications || '');
+          const rawQual = profile.tutorProfile.qualifications || '';
+          const { urls: loadedCerts, note: loadedNote } = parseCertificates(rawQual);
+          setCertImages(loadedCerts);
+          setCertNote(loadedNote);
+          setQualifications(rawQual);
           setDefaultMeetingLink(profile.tutorProfile.defaultMeetingLink || '');
 
           // Map existing subjects safely
@@ -157,6 +191,143 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
     }));
   };
 
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const oldAvatar = avatarUrl;
+    const tempAvatar = URL.createObjectURL(file);
+    try {
+      setAvatarUrl(tempAvatar);
+      setUploadingAvatar(true);
+      setMessage(null);
+      const res = await uploadService.uploadImage(file, 'avatars');
+      if (res && res.url) {
+        setAvatarUrl(res.url);
+        try { URL.revokeObjectURL(tempAvatar); } catch {}
+        setMessage({ type: 'success', text: '📷 Đã tải ảnh đại diện lên Cloudinary thành công!' });
+      }
+    } catch (err: any) {
+      console.error('Failed to upload avatar:', err);
+      setAvatarUrl(oldAvatar);
+      try { URL.revokeObjectURL(tempAvatar); } catch {}
+      setMessage({ type: 'error', text: err?.response?.data?.messages?.[0] || 'Lỗi khi tải ảnh đại diện lên Cloudinary.' });
+    } finally {
+      setUploadingAvatar(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleQualFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawFiles = Array.from(e.target.files || []);
+    if (rawFiles.length === 0) return;
+
+    // Filter duplicate files in the same batch
+    const files = rawFiles.filter((f, idx, arr) =>
+      arr.findIndex((x) => x.name === f.name && x.size === f.size) === idx
+    );
+
+    const currentTotal = certImages.length + uploadingCerts.length;
+    const remainingSlots = MAX_CERT_IMAGES - currentTotal;
+    if (remainingSlots <= 0) {
+      setMessage({ type: 'error', text: `⚠️ Bạn đã tải đủ tối đa ${MAX_CERT_IMAGES} ảnh bằng cấp/chứng chỉ.` });
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    if (files.length > remainingSlots) {
+      setMessage({
+        type: 'error',
+        text: `⚠️ Bạn chỉ có thể chọn thêm tối đa ${remainingSlots} ảnh nữa (Tổng cộng tối đa ${MAX_CERT_IMAGES} ảnh).`,
+      });
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    // 1. Tạo instant preview bằng Blob URL NGAY TỨC THÌ (0.01 giây)
+    const newItems = files.map((file) => ({
+      id: Math.random().toString(36).substring(2, 9),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    setUploadingCerts((prev) => [...prev, ...newItems]);
+    setUploadingQual(true);
+    setMessage(null);
+
+    // 2. Tải lên Cloudinary
+    try {
+      const uploadPromises = newItems.map(async (item) => {
+        try {
+          const res = await uploadService.uploadImage(item.file, 'certificates');
+          return { id: item.id, url: res?.url || '', previewUrl: item.previewUrl };
+        } catch (err) {
+          console.error('Failed to upload certificate:', err);
+          return { id: item.id, url: '', previewUrl: item.previewUrl, error: true };
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+
+      // Thu hồi Blob URLs
+      results.forEach((r) => {
+        if (r.previewUrl) {
+          try { URL.revokeObjectURL(r.previewUrl); } catch {}
+        }
+      });
+
+      const successfulUrls = results.filter((r) => r.url).map((r) => r.url);
+      const finishedIds = results.map((r) => r.id);
+
+      // Cập nhật state
+      setUploadingCerts((prev) => prev.filter((item) => !finishedIds.includes(item.id)));
+
+      if (successfulUrls.length > 0) {
+        setCertImages((prev) => {
+          const updatedList = [...prev, ...successfulUrls];
+          const combined = [...updatedList, ...(certNote.trim() ? [certNote.trim()] : [])].join(', ');
+          setQualifications(combined);
+          return updatedList;
+        });
+        setMessage({ type: 'success', text: `📜 Đã tải thành công ${successfulUrls.length} ảnh bằng cấp lên Cloudinary!` });
+      }
+
+      const failedCount = results.filter((r) => r.error).length;
+      if (failedCount > 0) {
+        setMessage({ type: 'error', text: `⚠️ Có ${failedCount} ảnh tải thất bại, vui lòng kiểm tra kết nối mạng và thử lại.` });
+      }
+    } finally {
+      setUploadingQual(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleRemoveCertImage = (indexToRemove: number) => {
+    const updated = certImages.filter((_, idx) => idx !== indexToRemove);
+    setCertImages(updated);
+    const combined = [...updated, ...(certNote.trim() ? [certNote.trim()] : [])].join(', ');
+    setQualifications(combined);
+  };
+
+  const handleAddCertUrl = () => {
+    if (!certNote.trim()) return;
+    if (certImages.length >= MAX_CERT_IMAGES) {
+      setMessage({ type: 'error', text: `⚠️ Đã đạt tối đa ${MAX_CERT_IMAGES} ảnh bằng cấp.` });
+      return;
+    }
+    const newUrl = certNote.trim();
+    const updated = [...certImages, newUrl];
+    setCertImages(updated);
+    setCertNote('');
+    setQualifications(updated.join(', '));
+    setMessage({ type: 'success', text: '✓ Đã thêm link ảnh trực tiếp vào album bằng cấp!' });
+  };
+
+  const handleCertNoteChange = (val: string) => {
+    setCertNote(val);
+    const combined = [...certImages, ...(val.trim() ? [val.trim()] : [])].join(', ');
+    setQualifications(combined);
+  };
+
   const isImageUrl = (url: string) => {
     if (!url) return false;
     const clean = url.trim().toLowerCase();
@@ -182,8 +353,8 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
       errors.bio = `Giới thiệu bản thân không được vượt quá 300 ký tự (Hiện tại: ${bio.length}/300).`;
     }
 
-    if (qualifications.length > 300) {
-      errors.qualifications = `Bằng cấp/Chứng chỉ không được vượt quá 300 ký tự (Hiện tại: ${qualifications.length}/300).`;
+    if (certNote.length > 300) {
+      errors.qualifications = `Ghi chú bằng cấp không được vượt quá 300 ký tự (Hiện tại: ${certNote.length}/300).`;
     }
 
     if (avatarUrl.length > 300) {
@@ -460,33 +631,74 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
                 </div>
               </div>
 
-              {/* Avatar URL */}
+              {/* Avatar URL & Cloudinary Upload */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
-                    🖼️ Đường Dẫn Ảnh Đại Diện (URL Ảnh Web HTTP/HTTPS)
+                    🖼️ Ảnh Đại Diện (Tải ảnh từ máy hoặc dán URL)
                   </label>
                   <span style={{ fontSize: '11px', color: avatarUrl.length > 300 ? '#ef4444' : '#64748b' }}>
                     {avatarUrl.length}/300
                   </span>
                 </div>
-                <input
-                  type="text"
-                  maxLength={300}
-                  value={avatarUrl}
-                  onChange={(e) => handleTextChange('avatarUrl', e.target.value, setAvatarUrl, 'Ảnh đại diện')}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: fieldErrors.avatarUrl ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
-                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                    color: '#fff',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
-                />
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="file"
+                    ref={avatarInputRef}
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={handleAvatarFileSelect}
+                  />
+                  <input
+                    type="text"
+                    maxLength={300}
+                    value={avatarUrl}
+                    onChange={(e) => handleTextChange('avatarUrl', e.target.value, setAvatarUrl, 'Ảnh đại diện')}
+                    placeholder="https://res.cloudinary.com/... hoặc bấm nút chọn ảnh"
+                    style={{
+                      flex: 1,
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: fieldErrors.avatarUrl ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                      color: '#fff',
+                      fontSize: '14px',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadingAvatar}
+                    onClick={() => avatarInputRef.current?.click()}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid #38bdf8',
+                      backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                      color: '#38bdf8',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: uploadingAvatar ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    {uploadingAvatar ? '⏳ Đang tải...' : '📷 Chọn Ảnh'}
+                  </button>
+                </div>
+                {isImageUrl(avatarUrl) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar Preview"
+                      style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #38bdf8' }}
+                      onError={(e) => ((e.target as HTMLElement).style.display = 'none')}
+                    />
+                    <span style={{ fontSize: '12px', color: '#4ade80' }}>✓ Xem trước ảnh đại diện</span>
+                  </div>
+                )}
                 {fieldErrors.avatarUrl && (
                   <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
                     ⚠️ {fieldErrors.avatarUrl}
@@ -494,82 +706,234 @@ export const TutorProfileEditModal: React.FC<TutorProfileEditModalProps> = ({ is
                 )}
               </div>
 
-              {/* Qualifications with Image URL preview */}
+              {/* Qualifications with Cloudinary Upload & Preview */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0' }}>
-                    📜 Bằng Cấp & Chứng Chỉ (Nhập text hoặc dán URL ảnh bằng cấp)
+                    📜 Bằng Cấp & Chứng Chỉ (Tối đa ${MAX_CERT_IMAGES} ảnh)
                   </label>
-                  <span style={{ fontSize: '11px', color: qualifications.length > 300 ? '#ef4444' : '#64748b' }}>
-                    {qualifications.length}/300
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  maxLength={300}
-                  value={qualifications}
-                  onChange={(e) => handleTextChange('qualifications', e.target.value, setQualifications, 'Bằng cấp/Chứng chỉ')}
-                  placeholder="Ví dụ: IELTS 8.0 / Thạc sĩ Sư Phạm hoặc dán link ảnh: https://.../bang-cap.jpg"
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: fieldErrors.qualifications ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
-                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                    color: '#fff',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
-                />
-                {fieldErrors.qualifications && (
-                  <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                    ⚠️ {fieldErrors.qualifications}
-                  </span>
-                )}
-
-                {/* Certificate Image Preview Box */}
-                {isImageUrl(qualifications) && (
-                  <div
+                  <span
                     style={{
-                      marginTop: '10px',
-                      padding: '12px',
-                      backgroundColor: 'rgba(56, 189, 248, 0.08)',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(56, 189, 248, 0.2)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '14px',
+                      fontSize: '11px',
+                      color: (certImages.length + uploadingCerts.length) >= MAX_CERT_IMAGES ? '#38bdf8' : '#94a3b8',
+                      backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontWeight: 600,
                     }}
                   >
-                    <img
-                      src={qualifications}
-                      alt="Chứng chỉ/Bằng cấp"
-                      style={{
-                        width: '80px',
-                        height: '60px',
-                        objectFit: 'cover',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                      }}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                    <div>
-                      <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 600, display: 'block' }}>
-                        ✓ Đã nhận diện đường dẫn ảnh Bằng Cấp
-                      </span>
-                      <a
-                        href={qualifications}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ fontSize: '11px', color: '#94a3b8', textDecoration: 'underline' }}
+                    Đã tải: {certImages.length + uploadingCerts.length}/${MAX_CERT_IMAGES} ảnh
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    ref={qualInputRef}
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={handleQualFileSelect}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadingQual || certImages.length >= MAX_CERT_IMAGES}
+                    onClick={() => qualInputRef.current?.click()}
+                    style={{
+                      padding: '9px 16px',
+                      borderRadius: '8px',
+                      border: certImages.length >= MAX_CERT_IMAGES ? '1px solid #475569' : '1px solid #a855f7',
+                      backgroundColor: certImages.length >= MAX_CERT_IMAGES ? 'rgba(71, 85, 105, 0.2)' : 'rgba(168, 85, 247, 0.15)',
+                      color: certImages.length >= MAX_CERT_IMAGES ? '#94a3b8' : '#c084fc',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: uploadingQual || certImages.length >= MAX_CERT_IMAGES ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    {uploadingQual ? '⏳ Đang tải...' : certImages.length >= MAX_CERT_IMAGES ? '✓ Đã đủ 4 ảnh' : '📁 Tải Thêm Ảnh Bằng Cấp'}
+                  </button>
+                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                    (Có thể chọn cùng lúc tối đa ${MAX_CERT_IMAGES} ảnh từ máy tính)
+                  </span>
+                </div>
+
+                {/* Gallery of Uploaded Certificate Photos */}
+                {(certImages.length > 0 || uploadingCerts.length > 0) && (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+                      gap: '10px',
+                      marginBottom: '10px',
+                      padding: '10px',
+                      backgroundColor: 'rgba(15, 23, 42, 0.5)',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                    }}
+                  >
+                    {/* Finalized Cloudinary Certificates */}
+                    {certImages.map((url, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          position: 'relative',
+                          height: '80px',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          backgroundColor: '#0f172a',
+                          transition: 'transform 0.15s ease',
+                        }}
                       >
-                        Bấm vào đây để xem ảnh gốc
-                      </a>
-                    </div>
+                        <a href={url} target="_blank" rel="noreferrer" title="Click để xem ảnh gốc">
+                          <img
+                            src={url}
+                            alt={`Bằng cấp ${idx + 1}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </a>
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: '4px',
+                            left: '4px',
+                            fontSize: '10px',
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            color: '#38bdf8',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          #${idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCertImage(idx)}
+                          title="Xóa ảnh này"
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            backgroundColor: '#ef4444',
+                            color: '#fff',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Instant Optimistic Uploading Cards */}
+                    {uploadingCerts.map((item, idx) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          position: 'relative',
+                          height: '80px',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: '1px dashed #38bdf8',
+                          backgroundColor: '#0f172a',
+                        }}
+                      >
+                        <img
+                          src={item.previewUrl}
+                          alt="Đang tải..."
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.7)' }}
+                        />
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            backgroundColor: 'rgba(15, 23, 42, 0.55)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '3px',
+                          }}
+                        >
+                          <span style={{ fontSize: '14px' }}>⏳</span>
+                          <span style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 600 }}>
+                            Đang lưu...
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
+
+                {/* Optional Note Text / Paste URL */}
+                <div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      maxLength={300}
+                      value={certNote}
+                      onChange={(e) => handleCertNoteChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && isImageUrl(certNote)) {
+                          e.preventDefault();
+                          handleAddCertUrl();
+                        }
+                      }}
+                      placeholder="Dán link ảnh (https://...) hoặc nhập ghi chú bằng cấp..."
+                      style={{
+                        flex: 1,
+                        padding: '9px 12px',
+                        borderRadius: '8px',
+                        border: fieldErrors.qualifications ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.15)',
+                        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                        color: '#fff',
+                        fontSize: '13px',
+                        outline: 'none',
+                      }}
+                    />
+                    {isImageUrl(certNote) && (
+                      <button
+                        type="button"
+                        onClick={handleAddCertUrl}
+                        disabled={certImages.length >= MAX_CERT_IMAGES}
+                        style={{
+                          padding: '9px 14px',
+                          borderRadius: '8px',
+                          border: '1px solid #0284c7',
+                          backgroundColor: '#0284c7',
+                          color: '#fff',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        + Thêm vào album
+                      </button>
+                    )}
+                  </div>
+                  {fieldErrors.qualifications && (
+                    <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      ⚠️ {fieldErrors.qualifications}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Bio (Limit 300 chars) */}

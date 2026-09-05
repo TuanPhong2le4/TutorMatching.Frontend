@@ -4,6 +4,39 @@ import { availabilityService, AvailabilityDto } from '../../tutors/services/avai
 
 const REJECT_REASON_MAX = 1000;
 
+const parseCertificates = (raw?: string): { certUrls: string[]; note: string } => {
+  if (!raw) return { certUrls: [], note: '' };
+  const isImg = (url: string) => {
+    if (!url) return false;
+    const trimmed = url.trim();
+    return trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.includes('res.cloudinary.com') || /\.(jpg|jpeg|png|webp|gif)$/i.test(trimmed);
+  };
+  const parts = raw.split(/[\n,]+/).map((p) => p.trim()).filter(Boolean);
+  const certUrls: string[] = [];
+  const notes: string[] = [];
+  for (const p of parts) {
+    if (isImg(p)) {
+      if (certUrls.length < 4) certUrls.push(p);
+    } else {
+      notes.push(p);
+    }
+  }
+  return { certUrls, note: notes.join(', ') };
+};
+
+
+const isImageUrl = (url?: string) => {
+  if (!url) return false;
+  const trimmed = url.trim();
+  return (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.includes('res.cloudinary.com') ||
+    /\.(jpg|jpeg|png|webp|gif)$/i.test(trimmed)
+  );
+};
+
+
 export const AdminTutorApproval: React.FC = () => {
   const [tutors, setTutors] = useState<PendingTutorDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -17,6 +50,7 @@ export const AdminTutorApproval: React.FC = () => {
   const [rejectTutorId, setRejectTutorId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
   const [rejectErrorMsg, setRejectErrorMsg] = useState<string | null>(null);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   useEffect(() => {
     loadPendingTutors();
@@ -204,9 +238,39 @@ export const AdminTutorApproval: React.FC = () => {
                 </div>
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px', marginTop: '4px' }}>
                   <strong style={{ fontSize: '13px', color: '#38bdf8', display: 'block', marginBottom: '4px' }}>🎓 Bằng cấp / Trình độ:</strong>
-                  <p style={{ fontSize: '13px', color: '#cbd5e1', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>
-                    {t.qualifications || 'Chưa cung cấp'}
-                  </p>
+                  {(() => {
+                    const { certUrls, note } = parseCertificates(t.qualifications);
+                    if (certUrls.length > 0) {
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {certUrls.slice(0, 4).map((url, idx) => (
+                              <img
+                                key={idx}
+                                src={url}
+                                alt={`Bằng cấp ${idx + 1}`}
+                                style={{
+                                  width: '38px',
+                                  height: '28px',
+                                  objectFit: 'cover',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                                }}
+                              />
+                            ))}
+                          </div>
+                          <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 600 }}>
+                            📜 {certUrls.length} ảnh bằng cấp
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <p style={{ fontSize: '13px', color: '#cbd5e1', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>
+                        {note || t.qualifications || 'Chưa cung cấp'}
+                      </p>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -304,9 +368,115 @@ export const AdminTutorApproval: React.FC = () => {
               </div>
 
               <div>
-                <strong style={{ display: 'block', fontSize: '14px', color: '#38bdf8', marginBottom: '6px' }}>🎓 Bằng cấp & Trình độ chuyên môn:</strong>
-                <div style={{ padding: '14px 18px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', color: '#cbd5e1', fontSize: '14px', lineHeight: '1.5' }}>
-                  {selectedTutor.qualifications}
+                <strong style={{ display: 'block', fontSize: '14px', color: '#38bdf8', marginBottom: '8px' }}>
+                  🎓 Bằng cấp & Trình độ chuyên môn:
+                </strong>
+                <div style={{ padding: '14px 16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  {(() => {
+                    const { certUrls, note } = parseCertificates(selectedTutor.qualifications);
+                    if (certUrls.length > 0) {
+                      return (
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
+                            <span style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 600 }}>
+                              📜 Ảnh bằng cấp đính kèm ({certUrls.length} ảnh):
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                              💡 Nhấp vào ảnh để phóng to
+                            </span>
+                          </div>
+
+                          {/* Gallery Grid - Compact Thumbnails (height 100px - 110px) */}
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                              gap: '10px',
+                            }}
+                          >
+                            {certUrls.map((url, idx) => (
+                              <div
+                                key={idx}
+                                onClick={() => setZoomImage(url)}
+                                title="Nhấp để phóng to ảnh bằng cấp này"
+                                style={{
+                                  position: 'relative',
+                                  height: '100px',
+                                  borderRadius: '8px',
+                                  overflow: 'hidden',
+                                  cursor: 'pointer',
+                                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                                  backgroundColor: '#0b1120',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                                  transition: 'transform 0.15s ease, border-color 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor = '#38bdf8';
+                                  e.currentTarget.style.transform = 'scale(1.02)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.25)';
+                                  e.currentTarget.style.transform = 'scale(1)';
+                                }}
+                              >
+                                <img
+                                  src={url}
+                                  alt={`Bằng cấp ${idx + 1}`}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    position: 'absolute',
+                                    bottom: '4px',
+                                    left: '4px',
+                                    fontSize: '10px',
+                                    backgroundColor: 'rgba(0,0,0,0.75)',
+                                    color: '#38bdf8',
+                                    padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  Ảnh #{idx + 1}
+                                </span>
+                                <span
+                                  style={{
+                                    position: 'absolute',
+                                    top: '4px',
+                                    right: '4px',
+                                    fontSize: '10px',
+                                    backgroundColor: 'rgba(2, 132, 199, 0.85)',
+                                    color: '#fff',
+                                    padding: '2px 5px',
+                                    borderRadius: '4px',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  🔍 Phóng to
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {note && (
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '13px', color: '#cbd5e1' }}>
+                              <strong style={{ color: '#94a3b8' }}>Ghi chú:</strong> {note}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div style={{ color: '#cbd5e1', fontSize: '14px' }}>
+                        {selectedTutor.qualifications || 'Chưa cung cấp'}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -563,6 +733,97 @@ export const AdminTutorApproval: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+          {/* Lightbox Pop-up Viewer */}
+      {zoomImage && (
+        <div
+          onClick={() => setZoomImage(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.88)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '20px',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: '90vw',
+              maxHeight: '88vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+                gap: '16px',
+              }}
+            >
+              <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>
+                📜 Chi tiết bằng cấp / chứng chỉ
+              </span>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <a
+                  href={zoomImage}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    backgroundColor: '#0284c7',
+                    color: '#fff',
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                  }}
+                >
+                  Mở ảnh gốc ↗
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setZoomImage(null)}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                  }}
+                >
+                  ✕ Đóng
+                </button>
+              </div>
+            </div>
+            <img
+              src={zoomImage}
+              alt="Bằng cấp phóng to"
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '78vh',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
+                border: '1px solid rgba(255,255,255,0.2)',
+              }}
+            />
+          </div>
+        </div>
+      )}
+</div>
   );
 };

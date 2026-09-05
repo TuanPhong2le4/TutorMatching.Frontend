@@ -91,23 +91,29 @@ export const TutorCard: React.FC<TutorCardProps> = ({ tutor, onSelect, onBook })
         </p>
 
         {/* Qualifications Tag */}
-        {tutor.qualifications && (
-          <div
-            style={{
-              fontSize: '12px',
-              color: '#38bdf8',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
-              padding: '6px 10px',
-              borderRadius: '6px',
-              marginBottom: '16px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            📜 {tutor.qualifications}
-          </div>
-        )}
+        {tutor.qualifications && (() => {
+          const isImg = (u: string) => u.startsWith('http://') || u.startsWith('https://') || u.includes('res.cloudinary.com') || u.startsWith('data:image');
+          const parts = tutor.qualifications.split(/[\n,]+/).map((p) => p.trim()).filter(Boolean);
+          const note = parts.filter((p) => !isImg(p)).join(', ');
+          if (!note) return null;
+          return (
+            <div
+              style={{
+                fontSize: '12px',
+                color: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                marginBottom: '16px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              📜 {note}
+            </div>
+          );
+        })()}
 
         {/* Subjects List */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>

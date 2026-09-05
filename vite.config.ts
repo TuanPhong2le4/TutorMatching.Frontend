@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -7,17 +7,17 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': {
-        target: 'https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net',
+      "/api": {
+        target: "https://tutorplatform-api-2026-a7bcgbcehfcedtg7.eastasia-01.azurewebsites.net",
         changeOrigin: true,
         secure: false,
       },
-      '/hubs': {
-        target: 'https://tutorplatform-gcdueeejgkefcya6.eastasia-01.azurewebsites.net',
+      "/hubs": {
+        target: "https://tutorplatform-api-2026-a7bcgbcehfcedtg7.eastasia-01.azurewebsites.net",
         ws: true,
         changeOrigin: true,
         secure: false,
       },
     },
   },
-})
+});
