@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthPage, ChangePasswordModal, useAuth } from '../features/auth';
 import { AvailabilityManager, availabilityService, profileService, TutorCard, TutorDetailModal, TutorProfileEditModal, TutorSearchFilter, tutorService, type Subject, type TutorSearchResult } from '../features/tutors';
 import { BookingModal, bookingService, groupBookings, ReviewModal, SessionRecordModal, type BookingDto, type GroupedBooking } from '../features/bookings';
-import { creditService, WalletDashboard } from '../features/wallet';
+import { creditService, WalletDashboard, PaymentResultModal } from '../features/wallet';
 import { LearningProgressDashboard } from '../features/progress';
 import { AdminDashboard, AdminRevenueDashboard, AdminReviewsDashboard, AdminSubjectManagement, AdminTutorApproval, AdminUserManagement } from '../features/admin';
 import { CenterNotifications, notificationService, NotificationDropdown, type NotificationDto } from '../features/notifications';
@@ -15,29 +15,69 @@ export default function App() {
   const { user, isAuthenticated, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [activeTab, setActiveTab] = useState<TabType>(() => {
+    if (typeof window === 'undefined') return 'home';
+    const rawPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
     const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
+    const tabParam = params.get('tab')?.toLowerCase();
     const paymentParam = params.get('payment');
-    if (paymentParam || tabParam === 'wallet') {
+
+    if (paymentParam || rawPath === 'wallet' || tabParam === 'wallet') {
       return 'wallet';
     }
-    const validTabs: TabType[] = ['home', 'tutors', 'bookings', 'wallet', 'progress', 'admin-reviews', 'admin-users', 'admin-tutors', 'admin-revenue', 'admin-subjects', 'admin-notifications', 'center-notifications'];
+
+    const validTabs: TabType[] = [
+      'home',
+      'tutors',
+      'bookings',
+      'wallet',
+      'progress',
+      'admin-reviews',
+      'admin-users',
+      'admin-tutors',
+      'admin-revenue',
+      'admin-subjects',
+      'admin-notifications',
+      'center-notifications'
+    ];
+
+    // Support standard URL aliases
+    if (rawPath === 'notifications') return 'center-notifications';
+    if (rawPath === 'tutor') return 'tutors';
+    if (rawPath === 'booking') return 'bookings';
+
+    if (rawPath && (validTabs as string[]).includes(rawPath)) {
+      return rawPath as TabType;
+    }
+
     if (tabParam && (validTabs as string[]).includes(tabParam)) {
       return tabParam as TabType;
     }
+
     return 'home';
   });
+
   const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set(['home']);
+    const rawPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
     const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
+    const tabParam = params.get('tab')?.toLowerCase();
     const paymentParam = params.get('payment');
-    if (paymentParam || tabParam === 'wallet') {
-      return new Set(['home', 'wallet']);
+
+    let initialTab = 'home';
+    if (paymentParam || rawPath === 'wallet' || tabParam === 'wallet') {
+      initialTab = 'wallet';
+    } else if (rawPath === 'notifications') {
+      initialTab = 'center-notifications';
+    } else if (rawPath === 'tutor') {
+      initialTab = 'tutors';
+    } else if (rawPath === 'booking') {
+      initialTab = 'bookings';
+    } else if (rawPath) {
+      initialTab = rawPath;
+    } else if (tabParam) {
+      initialTab = tabParam;
     }
-    if (tabParam) {
-      return new Set(['home', tabParam]);
-    }
-    return new Set(['home']);
+    return new Set(['home', initialTab]);
   });
 
   useEffect(() => {
@@ -164,7 +204,8 @@ export default function App() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const handleLocation = () => {
-      const path = window.location.pathname;
+      const rawPath = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+      const path = `/${rawPath}`;
       const roleNum = Number(user?.role);
       const isTutor = roleNum === 1 || user?.role === 'Tutor';
       const isAdmin = roleNum === 0 || user?.role === 'Admin';
@@ -182,10 +223,16 @@ export default function App() {
         setIsProfileEditOpen(false);
 
         // 2. Guard checks for tab routes
-        if (path === '/tutors') {
+        if (path === '/tutors' || path === '/tutor') {
           setActiveTab('tutors');
-        } else if (path === '/bookings') {
+          if (window.location.pathname !== '/tutors') {
+            window.history.replaceState(null, '', '/tutors');
+          }
+        } else if (path === '/bookings' || path === '/booking') {
           setActiveTab('bookings');
+          if (window.location.pathname !== '/bookings') {
+            window.history.replaceState(null, '', '/bookings');
+          }
         } else if (path === '/wallet') {
           setActiveTab('wallet');
         } else if (path === '/progress') {
@@ -196,8 +243,9 @@ export default function App() {
           } else {
             setActiveTab('progress');
           }
-        } else if (path === '/center-notifications' || path === '/admin-notifications') {
-          setActiveTab('admin-notifications');
+        } else if (path === '/center-notifications' || path === '/admin-notifications' || path === '/notifications') {
+          const targetTab = isAdmin ? 'admin-notifications' : 'center-notifications';
+          setActiveTab(targetTab);
         } else if (path === '/admin-reviews') {
           // Admin reviews is only for Admin
           if (!isAdmin) {
@@ -238,19 +286,19 @@ export default function App() {
           } else {
             setActiveTab('admin-subjects');
           }
-        } else if (path === '/home' || path === '/' || path === '') {
+        } else if (path === '/home' || path === '/' || rawPath === '') {
           const params = new URLSearchParams(window.location.search);
-          const tabParam = params.get('tab');
+          const tabParam = params.get('tab')?.toLowerCase();
           const paymentParam = params.get('payment');
           if (paymentParam || tabParam === 'wallet') {
             setActiveTab('wallet');
             if (window.location.pathname !== '/wallet') {
               window.history.replaceState(null, '', `/wallet${window.location.search}`);
             }
-          } else if (tabParam === 'tutors') {
+          } else if (tabParam === 'tutors' || tabParam === 'tutor') {
             setActiveTab('tutors');
             window.history.replaceState(null, '', '/tutors');
-          } else if (tabParam === 'bookings') {
+          } else if (tabParam === 'bookings' || tabParam === 'booking') {
             setActiveTab('bookings');
             window.history.replaceState(null, '', '/bookings');
           } else if (tabParam === 'progress' && !isAdmin) {
@@ -258,7 +306,7 @@ export default function App() {
             window.history.replaceState(null, '', '/progress');
           } else {
             setActiveTab('home');
-            if (window.location.pathname !== '/home') {
+            if (window.location.pathname !== '/home' && window.location.pathname !== '/') {
               window.history.replaceState(null, '', '/home');
             }
           }
@@ -496,8 +544,8 @@ export default function App() {
 
     let isCancelled = false;
 
-    // Connect directly to Azure backend hub for native WebSocket support
-    const hubUrl = (import.meta as any).env?.VITE_HUB_URL || 'https://tutorplatform-api-2026-a7bcgbcehfcedtg7.eastasia-01.azurewebsites.net/hubs/notifications';
+    // Connect directly to backend hub for native WebSocket support
+    const hubUrl = (import.meta as any).env?.VITE_HUB_URL || '/hubs/notifications';
     const connection = new HubConnectionBuilder()
       .withUrl(hubUrl, {
         accessTokenFactory: () => token,
@@ -630,7 +678,10 @@ export default function App() {
     }
   }, [isAuthenticated, activeTab]);
 
-  // Handle VNPAY callback status in URL query parameters
+  // Modern VNPAY payment callback status modal state
+  const [paymentResult, setPaymentResult] = useState<'success' | 'failed' | null>(null);
+
+  // Handle VNPAY callback status in URL query parameters with modern in-app notification
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const paymentStatus = params.get('payment');
@@ -638,15 +689,33 @@ export default function App() {
       setActiveTab('wallet');
       window.history.replaceState(null, '', '/wallet');
       fetchWalletBalance();
-      setTimeout(() => {
-        alert('🎉 Nạp tiền qua VNPAY thành công! Tín chỉ đã được cộng vào tài khoản của bạn.');
-      }, 400);
+      // Show modern celebratory in-app modal
+      setPaymentResult('success');
+      // Also push modern toast notification
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: `vnpay-${Date.now()}`,
+          title: 'Nạp Tín Chỉ Thành Công!',
+          message: 'Giao dịch qua VNPAY đã hoàn tất. Số dư tín chỉ đã được cộng vào ví của bạn.',
+          type: 'CreditChanged',
+        },
+      ]);
     } else if (paymentStatus === 'failed') {
       setActiveTab('wallet');
       window.history.replaceState(null, '', '/wallet');
-      setTimeout(() => {
-        alert('❌ Thanh toán qua VNPAY thất bại hoặc bị hủy bỏ.');
-      }, 400);
+      // Show modern failure in-app modal
+      setPaymentResult('failed');
+      // Also push error toast notification
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: `vnpay-${Date.now()}`,
+          title: 'Thanh Toán Không Thành Công',
+          message: 'Giao dịch qua VNPAY đã bị hủy hoặc gặp sự cố kỹ thuật.',
+          type: 'BookingCancelled',
+        },
+      ]);
     }
   }, [isAuthenticated]);
 
@@ -3141,6 +3210,14 @@ export default function App() {
 
       {/* Toast Container (Phase 6 Real-time alerts) */}
       <ToastContainer toasts={toasts} onRemove={handleRemoveToast} />
+
+      {/* Modern VNPAY Payment Result Modal */}
+      <PaymentResultModal
+        isOpen={paymentResult !== null}
+        status={paymentResult}
+        onClose={() => setPaymentResult(null)}
+        onNavigateToTutors={() => handleTabChange('tutors')}
+      />
 
       {/* REVIEW DETAILS MODAL (For viewing submitted reviews) */}
       {viewReviewDetails && (

@@ -1,23 +1,28 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      "/api": {
-        target: "https://tutorplatform-api-2026-a7bcgbcehfcedtg7.eastasia-01.azurewebsites.net",
-        changeOrigin: true,
-        secure: false,
-      },
-      "/hubs": {
-        target: "https://tutorplatform-api-2026-a7bcgbcehfcedtg7.eastasia-01.azurewebsites.net",
-        ws: true,
-        changeOrigin: true,
-        secure: false,
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const target = env.VITE_API_URL || "http://localhost:5000";
+
+  return {
+    plugins: [react()],
+    server: {
+      port: 5173,
+      proxy: {
+        "/api": {
+          target,
+          changeOrigin: true,
+          secure: false,
+        },
+        "/hubs": {
+          target,
+          ws: true,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
-  },
+  };
 });
